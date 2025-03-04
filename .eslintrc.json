@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "rules": {
+    "react/jsx-max-props-per-line": ["error", { "maximum": 1 }],
+    "react/jsx-first-prop-new-line": ["error", "multiline"],
+    "react/jsx-wrap-multilines": [
+      "error",
+      {
+        "declaration": "parens-new-line",
+        "assignment": "parens-new-line",
+        "return": "parens-new-line"
+      }
+    ]
+  }
+}
