@@ -7,8 +7,9 @@ import {
 } from '../store/transactionSlice';
 import IncomeSection from '../components/IncomeSection';
 // import ExpenseSection from "../components/ExpenseSection";
-import { Flex } from '@mantine/core';
+import { Flex, Grid } from '@mantine/core';
 import ExpenseSection from '../components/ExpenseSection';
+import LearnPersonalFinance from '../components/LearnPersonalFinance';
 
 const Dashboard = () => {
   const dispatch = useDispatch();
@@ -51,15 +52,25 @@ const Dashboard = () => {
   ) : (
     <>
       <SynopsisCard></SynopsisCard>
-      {/* Income section */}
-      <Flex mt={20} direction={'column'}>
-        {recentIncome && (
-          <IncomeSection recentIncomeData={recentIncome}></IncomeSection>
-        )}
-        {recentExpense && (
-          <ExpenseSection recentExpenseData={recentExpense}></ExpenseSection>
-        )}
-      </Flex>
+
+      <Grid gutter={'xl'} mt={'xl'}>
+        <Grid.Col span={8}>
+          {/* Income section */}
+          <Flex direction={'column'}>
+            {recentIncome && (
+              <IncomeSection recentIncomeData={recentIncome}></IncomeSection>
+            )}
+            {recentExpense && (
+              <ExpenseSection
+                recentExpenseData={recentExpense}
+              ></ExpenseSection>
+            )}
+          </Flex>
+        </Grid.Col>
+        <Grid.Col span={4}>
+          <LearnPersonalFinance />
+        </Grid.Col>
+      </Grid>
 
       {/* Expense section */}
     </>

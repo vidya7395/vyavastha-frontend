@@ -1,26 +1,11 @@
-import {
-  Badge,
-  Button,
-  Card,
-  Center,
-  Flex,
-  Table,
-  Text,
-  useMantineTheme
-} from '@mantine/core';
-import { enFormatter } from '../utils/helper';
+import { Button, Flex, Stack, Text } from '@mantine/core';
 import PropTypes from 'prop-types';
-import {
-  IconHome,
-  IconMoneybag,
-  IconStar,
-  IconTrendingDown,
-  IconTrendingUp
-} from '@tabler/icons-react';
+
+import SectionHeading from './SectionHeading';
+import TransactionItem from './TransactionItem';
 
 const ExpenseSection = ({ recentExpenseData }) => {
-  const theme = useMantineTheme();
-  const elements = recentExpenseData?.recentExpenses?.map((transaction) => {
+  const expenseTrans = recentExpenseData?.recentExpenses?.map((transaction) => {
     const transactionDate = new Date(transaction.date);
     return {
       key: transaction._id,
@@ -36,126 +21,6 @@ const ExpenseSection = ({ recentExpenseData }) => {
   });
   console.log('element new');
 
-  const rows = elements.map((element) => (
-    <Table.Tr key={element.key}>
-      <Table.Td style={{ width: 30 }}>
-        <Flex justify={Center}>
-          <Card size="sm" justify={'center'} px="8" py={2}>
-            <Text fw={700} size="sm" ta="center">
-              {element.date}
-            </Text>
-            <Text tt="uppercase" size="sm" ta="center" c="orange" fw={500}>
-              {element.month}
-            </Text>
-          </Card>
-        </Flex>
-      </Table.Td>
-      <Table.Td>
-        <div>
-          <Text tt="uppercase" size="md">
-            {element.transaction}
-          </Text>
-          <Text tt="uppercase" size="10px" mt={2}>
-            {element.description}
-          </Text>
-        </div>
-      </Table.Td>
-      <Table.Td>
-        <Badge
-          variant="outline"
-          color={theme.colors.dark[5]}
-          size="lg"
-          c={theme.colors.dark[1]}
-        >
-          <Flex
-            gap="xs"
-            justify="center"
-            align="center"
-            direction="row"
-            wrap="nowrap"
-          >
-            {element.spendingType == 'savings' ? (
-              <IconTrendingUp
-                color={theme.colors.green[8]}
-                size={18}
-              ></IconTrendingUp>
-            ) : (
-              <IconTrendingDown
-                color={theme.colors.red[8]}
-                size={18}
-              ></IconTrendingDown>
-            )}
-
-            <Text size="sm">{element.category}</Text>
-          </Flex>
-        </Badge>
-      </Table.Td>
-      <Table.Td>
-        <Badge variant="outline" color={theme.colors.dark[5]} size="lg" flex>
-          <Flex
-            gap="xs"
-            justify="center"
-            align="center"
-            direction="row"
-            wrap="nowrap"
-          >
-            {element.spendingType == 'savings' && (
-              <IconMoneybag
-                size={14}
-                color={theme.colors.green[4]}
-              ></IconMoneybag>
-            )}
-            {element.spendingType == 'wants' && (
-              <IconStar color={theme.colors.yellow[4]} size={14}></IconStar>
-            )}
-            {element.spendingType == 'needs' && (
-              <IconHome
-                color={theme.colors.blue[4]}
-                size={14}
-                alignmentBaseline="central"
-              ></IconHome>
-            )}
-            <Text c={theme.colors.dark[1]} size="sm">
-              {element.spendingType}
-            </Text>
-          </Flex>
-        </Badge>
-      </Table.Td>
-      <Table.Td>
-        <Text fw={700}>{enFormatter.format(element.amount)}</Text>
-      </Table.Td>
-    </Table.Tr>
-  ));
-
-  const ths = (
-    <Table.Tr>
-      <Table.Th>
-        <Text size="sm" tt="uppercase" fw="500">
-          Date
-        </Text>
-      </Table.Th>
-      <Table.Th>
-        <Text size="sm" tt="uppercase" fw="500">
-          transaction
-        </Text>
-      </Table.Th>
-      <Table.Th>
-        <Text size="sm" tt="uppercase" fw="500">
-          Category
-        </Text>
-      </Table.Th>
-      <Table.Th>
-        <Text size="sm" tt="uppercase" fw="500">
-          Type
-        </Text>
-      </Table.Th>
-      <Table.Th>
-        <Text size="sm" tt="uppercase" fw="500">
-          Amount
-        </Text>
-      </Table.Th>
-    </Table.Tr>
-  );
   const openAddIncomeModal = () => {};
   return (
     <>
@@ -168,44 +33,38 @@ const ExpenseSection = ({ recentExpenseData }) => {
         mb={10}
         mt={30}
       >
-        <div>
-          <Text fw={700}>Recent Expenses</Text>
-          <Text size="sm">You have total 2 income for this month</Text>
-        </div>
+        <SectionHeading
+          title={'Recent Expenses'}
+          description={`You have total ${recentExpenseData?.recentExpenses?.length} expense(s) for this month`}
+        ></SectionHeading>
 
-        <Flex
-          gap="md"
-          justify="flex-start"
-          align="flex-start"
-          direction="row"
-          wrap="nowrap"
+        <Button
+          variant="white"
+          color="dark"
+          size="compact-sm"
+          onClick={(event) => {
+            event.stopPropagation(); // ✅ Stop event from reaching Accordion.Control
+            openAddIncomeModal();
+          }}
         >
-          <Button
-            variant="white"
-            color="dark"
-            size="compact-sm"
-            onClick={(event) => {
-              event.stopPropagation(); // ✅ Stop event from reaching Accordion.Control
-              openAddIncomeModal();
-            }}
-          >
-            <Text size="sm" fw={500}>
-              View All
-            </Text>
-          </Button>
-        </Flex>
+          <Text size="sm" fw={500}>
+            View All
+          </Text>
+        </Button>
       </Flex>
-      <Table
-        withTableBorder
-        withColumnBorders
-        bgcolor={theme.colors.dark[9]}
-        verticalSpacing="sm"
-        borderColor={theme.colors.dark[7]}
-      >
-        <Table.Thead>{ths}</Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-        {/* {...rows} */}
-      </Table>
+      <Stack>
+        {expenseTrans.map((expense) => (
+          <TransactionItem
+            key={expense.key}
+            amount={expense.amount}
+            date={`${expense.date} ${expense.month}`}
+            title={expense.description}
+            badges={[expense.category, expense.spendingType]}
+            type={expense.type}
+            isRecurring={true}
+          />
+        ))}
+      </Stack>
     </>
   );
 };

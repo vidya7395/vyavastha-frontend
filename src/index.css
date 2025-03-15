@@ -1,0 +1,9 @@
+.menu-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.active-menu-link {
+  color: var(--mantine-color-white);
+  font-weight: 700;
+}

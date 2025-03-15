@@ -1,45 +1,16 @@
-import { AppShell, Avatar, Container, Flex, Menu } from '@mantine/core';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../store/authSlice';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { AppShell, Container } from '@mantine/core';
+import { useSelector } from 'react-redux';
+import { Outlet } from 'react-router-dom';
 import CommonDrawer from '../common/CommonDrawer';
+import AppHeader from './AppHeader';
 
 const Body = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
   const drawers = useSelector((state) => state.drawer); // Get all drawers from the Redux state
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/');
-  };
+
   return (
     <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
-        <Flex
-          style={{ margin: '10px 30px' }}
-          direction={{ base: 'column', sm: 'row' }}
-          gap={{ base: 'sm', sm: 'lg' }}
-          justify={{ sm: 'space-between' }}
-          align={'center'}
-          space={'md'}
-        >
-          <div>Expense Tracker</div>
-
-          <Menu width={200} shadow="md">
-            <Menu.Target>
-              <Avatar
-                style={{ cursor: 'pointer' }}
-                variant="filled"
-                radius="lg"
-                src=""
-              />
-            </Menu.Target>
-
-            <Menu.Dropdown>
-              <Menu.Item onClick={() => handleLogout()}>Logout</Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Flex>
+        <AppHeader />
       </AppShell.Header>
 
       <Container size={'xl'}>

@@ -1,4 +1,4 @@
-import { Card, Divider, Flex, Grid, Text, Loader } from '@mantine/core'; // Import Loader for better loading state
+import { Card, Divider, Flex, Grid, Text, Loader, Group } from '@mantine/core'; // Import Loader for better loading state
 import { enFormatter } from '../utils/helper';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchTransactionSummary } from '../store/transactionSlice';
@@ -86,92 +86,83 @@ const SynopsisCard = () => {
         <MonthSelector onMonthChange={handleMonthChange} />
       </Flex>
       <Divider style={{ margin: '20px 0px' }} />
-      <Grid>
-        <Grid.Col span={2}>
-          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-            <Text fw={700} size={'xs'}>
-              Total Income
-            </Text>
-            <Text c="green" fw={700} size={'sm'}>
-              {enFormatter.format(totalIncome)}
-            </Text>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-            <Text fw={700} size={'xs'}>
-              Total Expenses
-            </Text>
-            <Text c="red" fw={700} size={'sm'}>
-              {enFormatter.format(totalExpense)}
-            </Text>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Card
-            shadow="md"
-            padding="md"
-            radius="sm"
-            style={{
-              background: gradientBackground,
-              color: '#fff', // White text for contrast
-              textAlign: 'center'
-            }}
-          >
-            <Text fw={700} size="xs" style={{ opacity: 0.9 }}>
-              Balance
-            </Text>
-            <Text fw={700} size="sm">
-              {enFormatter.format(balance)}
-            </Text>
-          </Card>
-        </Grid.Col>
+
+      <Group grow>
+        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+          <Text fw={700} size={'xs'}>
+            Total Income
+          </Text>
+          <Text c="green" fw={700} size={'sm'}>
+            {enFormatter.format(totalIncome)}
+          </Text>
+        </Card>
+
+        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+          <Text fw={700} size={'xs'}>
+            Total Expenses
+          </Text>
+          <Text c="red" fw={700} size={'sm'}>
+            {enFormatter.format(totalExpense)}
+          </Text>
+        </Card>
+
+        <Card
+          shadow="md"
+          padding="md"
+          radius="sm"
+          style={{
+            background: gradientBackground,
+            color: '#fff', // White text for contrast
+            textAlign: 'center'
+          }}
+        >
+          <Text fw={700} size="xs" style={{ opacity: 0.9 }}>
+            Balance
+          </Text>
+          <Text fw={700} size="sm">
+            {enFormatter.format(balance)}
+          </Text>
+        </Card>
+
+        {/* <Divider orientation="vertical" h={'40px'} my={'auto'} /> */}
 
         {/* Needs, Wants, Savings */}
 
-        <Grid.Col span={2}>
-          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-            <Text fw={700} size={'xs'}>
-              Needs (50%)
-            </Text>
-            <Text
-              c={needsPercentage >= 50 ? 'red' : 'blue'}
-              fw={700}
-              size={'sm'}
-            >
-              {enFormatter.format(needs)}
-            </Text>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-            <Text fw={700} size={'xs'}>
-              Wants (30%)
-            </Text>
-            <Text
-              c={wantsPercentage >= 30 ? 'red' : 'orange'}
-              fw={700}
-              size={'sm'}
-            >
-              {enFormatter.format(wants)}
-            </Text>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-            <Text fw={700} size={'xs'}>
-              Savings (20%)
-            </Text>
-            <Text
-              c={savingsPercentage >= 20 ? 'green' : 'red'}
-              fw={700}
-              size={'sm'}
-            >
-              {enFormatter.format(savings)}
-            </Text>
-          </Card>
-        </Grid.Col>
-      </Grid>
+        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+          <Text fw={700} size={'xs'}>
+            Needs (50%)
+          </Text>
+          <Text c={needsPercentage >= 50 ? 'red' : 'blue'} fw={700} size={'sm'}>
+            {enFormatter.format(needs)}
+          </Text>
+        </Card>
+
+        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+          <Text fw={700} size={'xs'}>
+            Wants (30%)
+          </Text>
+          <Text
+            c={wantsPercentage >= 30 ? 'red' : 'orange'}
+            fw={700}
+            size={'sm'}
+          >
+            {enFormatter.format(wants)}
+          </Text>
+        </Card>
+
+        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+          <Text fw={700} size={'xs'}>
+            Savings (20%)
+          </Text>
+          <Text
+            c={savingsPercentage >= 20 ? 'green' : 'red'}
+            fw={700}
+            size={'sm'}
+          >
+            {enFormatter.format(savings)}
+          </Text>
+        </Card>
+      </Group>
     </Card>
   );
 };
