@@ -1,13 +1,28 @@
-import { Box } from '@mantine/core';
+import { Box, Flex } from '@mantine/core';
 import SynopsisCard from '../components/SynopsisCard';
-import ExpenseDetailPage from './ExpenseDetailPage';
+import TransactionDetailPage from './TransactionDetailPage';
 
 const FinanceDashboard = () => {
   return (
     <>
       <SynopsisCard></SynopsisCard>
       <Box mt="30">
-        <ExpenseDetailPage></ExpenseDetailPage>
+        <Flex
+          gap="md"
+          justify="normal"
+          align="normal"
+          direction="row"
+          wrap="nowrap"
+        >
+          <Box flex="1">
+            <TransactionDetailPage
+              isShowExpense={false}
+            ></TransactionDetailPage>
+          </Box>
+          <Box flex="1">
+            <TransactionDetailPage isShowExpense={true}></TransactionDetailPage>
+          </Box>
+        </Flex>
       </Box>
     </>
   );

@@ -25,6 +25,11 @@ export const transactionApi = createApi({
       query: ({ page = 1, limit = 10 }) =>
         `/transaction/expense?page=${page}&limit=${limit}`,
       providesTags: ['Transaction']
+    }),
+    getTransactionsIncome: builder.query({
+      query: ({ page = 1, limit = 10 }) =>
+        `/transaction/income?page=${page}&limit=${limit}`,
+      providesTags: ['Transaction']
     })
   })
 });
@@ -33,5 +38,6 @@ export const {
   useGetTransactionSummaryQuery,
   useGetRecentIncomeQuery,
   useGetRecentExpenseQuery,
-  useGetTransactionsExpenseQuery
+  useGetTransactionsExpenseQuery,
+  useGetTransactionsIncomeQuery
 } = transactionApi;

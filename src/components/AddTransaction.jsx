@@ -1,10 +1,12 @@
 import { SegmentedControl } from '@mantine/core';
 import AddExpenseForm from './AddExpenseForm';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
-const AddTransaction = () => {
-  const [selectedTab, setSelectedTab] = useState('expenses');
-
+const AddTransaction = ({ drawerId }) => {
+  const [selectedTab, setSelectedTab] = useState(
+    drawerId == 'expenseDrawer' ? 'expenses' : 'income'
+  );
   return (
     <>
       <SegmentedControl
@@ -17,15 +19,14 @@ const AddTransaction = () => {
         fullWidth
       />
 
-      <div style={{ marginTop: '20px' }}>
-        {selectedTab === 'expenses' ? (
-          <AddExpenseForm></AddExpenseForm>
-        ) : (
-          <AddExpenseForm></AddExpenseForm>
-        )}
+      <div style={{ marginTop: 20 }}>
+        <AddExpenseForm isExpense={selectedTab === 'expenses'} />
       </div>
     </>
   );
+};
+AddTransaction.propTypes = {
+  drawerId: PropTypes.string.isRequired
 };
 
 export default AddTransaction;

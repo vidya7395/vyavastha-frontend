@@ -15,6 +15,7 @@ import { DatePickerInput } from '@mantine/dates';
 import { useForm, Controller } from 'react-hook-form';
 import { showNotification } from '@mantine/notifications';
 import * as yup from 'yup';
+import PropTypes from 'prop-types';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import api from '../api/axiosInstance';
@@ -32,8 +33,11 @@ const schema = yup.object().shape({
   spendingType: yup.string().required('Spending Type is required')
 });
 
-const AddExpenseForm = () => {
+const AddExpenseForm = ({ isExpense }) => {
+  const isAddingExpense = isExpense;
+
   const [totalExpenses, setTotalExpenses] = useState(0);
+  const [totalIncome, setTotalIncome] = useState(0);
   const [categoryValue, setCategoryValue] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const { data: categories = [] } = useGetCategoriesQuery();
@@ -59,6 +63,10 @@ const AddExpenseForm = () => {
   });
 
   useEffect(() => {
+    setValue('spendingType', isAddingExpense ? 'needs' : 'savings');
+  }, [isAddingExpense, setValue]);
+
+  useEffect(() => {
     setValue('category', categoryValue);
   }, [categoryValue, setValue]);
 
@@ -68,7 +76,7 @@ const AddExpenseForm = () => {
       categoryId: categoryValue,
       description: data.description,
       date: data.date.toISOString().split('T')[0],
-      type: 'expense',
+      type: isAddingExpense ? 'expense' : 'income',
       spendingType: data.spendingType
     };
 
@@ -76,19 +84,28 @@ const AddExpenseForm = () => {
       await api.post('http://localhost:3000/api/transaction', [newExpense], {
         withCredentials: true
       });
-      setTotalExpenses((prev) => prev + parseFloat(data.amount));
+
+      if (isAddingExpense) {
+        setTotalExpenses((prev) => prev + parseFloat(data.amount));
+      } else {
+        setTotalIncome((prev) => prev + parseFloat(data.amount));
+      }
+
       showNotification({
         title: 'Success',
-        message: 'Expense added successfully!',
+        message: `${
+          isAddingExpense ? 'Expense' : 'Income'
+        } added successfully!`,
         color: 'teal'
       });
+
       reset();
       setCategoryValue('');
     } catch (error) {
-      console.error('Error adding expense:', error);
+      console.error('Error adding transaction:', error);
       showNotification({
         title: 'Error',
-        message: 'Failed to add expense',
+        message: `Failed to add ${isAddingExpense ? 'expense' : 'income'}`,
         color: 'red'
       });
     }
@@ -229,30 +246,32 @@ const AddExpenseForm = () => {
         </Flex>
 
         {/* Spending Type Select */}
-        <Flex gap="xl" align="center">
-          <Text size="lg" style={{ width: 120 }}>
-            50-30-20 Rule
-          </Text>
-          <Controller
-            name="spendingType"
-            control={control}
-            render={({ field }) => (
-              <Select
-                flex={1}
-                variant="unstyled"
-                size="sm"
-                value={field.value}
-                onChange={field.onChange}
-                data={[
-                  { value: 'needs', label: 'Needs' },
-                  { value: 'wants', label: 'Wants' },
-                  { value: 'savings', label: 'Savings' }
-                ]}
-                error={errors.spendingType?.message}
-              />
-            )}
-          />
-        </Flex>
+        {isAddingExpense && (
+          <Flex gap="xl" align="center">
+            <Text size="lg" style={{ width: 120 }}>
+              50-30-20 Rule
+            </Text>
+            <Controller
+              name="spendingType"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  flex={1}
+                  variant="unstyled"
+                  size="sm"
+                  value={field.value}
+                  onChange={field.onChange}
+                  data={[
+                    { value: 'needs', label: 'Needs' },
+                    { value: 'wants', label: 'Wants' },
+                    { value: 'savings', label: 'Savings' }
+                  ]}
+                  error={errors.spendingType?.message}
+                />
+              )}
+            />
+          </Flex>
+        )}
 
         {/* Description Input */}
         <Flex gap="sm" direction="column">
@@ -268,18 +287,29 @@ const AddExpenseForm = () => {
           />
         </Flex>
 
+        {/* Submit Button */}
         <Group position="right" mt={30}>
-          <Button type="submit">Add Expense</Button>
+          <Button type="submit">
+            {isAddingExpense ? 'Add Expense' : 'Add Income'}
+          </Button>
         </Group>
 
-        {totalExpenses > 0 && (
-          <div style={{ marginTop: '20px' }}>
-            <h3>Total Expenses Added: {totalExpenses.toFixed(2)}</h3>
+        {/* Total Summary */}
+        {(isAddingExpense ? totalExpenses : totalIncome) > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <h3>
+              Total {isAddingExpense ? 'Expenses' : 'Income'} Added:{' '}
+              {(isAddingExpense ? totalExpenses : totalIncome).toFixed(2)}
+            </h3>
           </div>
         )}
       </Flex>
     </form>
   );
+};
+
+AddExpenseForm.propTypes = {
+  isExpense: PropTypes.bool.isRequired
 };
 
 export default AddExpenseForm;

@@ -16,11 +16,9 @@ const CommonDrawer = ({ drawerId }) => {
 
   // Dynamic content based on drawer's contentType
   const renderContent = () => {
-    console.log('drawer', drawer);
-
     switch (drawer.contentType) {
       case 'AddTransaction':
-        return <AddTransaction />;
+        return <AddTransaction drawerId={drawerId} />;
 
       default:
         return <div>Loading...</div>; // Fallback if no matching content type
