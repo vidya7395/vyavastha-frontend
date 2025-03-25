@@ -1,44 +1,39 @@
-import { useEffect } from 'react';
-import {
-  Card,
-  Text,
-  useMantineTheme,
-  Loader,
-  Button,
-  Stack,
-  Box,
-  Group
-} from '@mantine/core';
-import ExpenseTransactionDetailCard from '../components/ExpenseTransactionDetailCard';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTransactionsExpense } from '../store/transactionSlice';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, Button, Group, Loader, Stack } from '@mantine/core';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { openDrawer } from '../store/drawerSlice';
+import ExpenseTransactionDetailCard from '../components/ExpenseTransactionDetailCard';
 import SectionHeading from '../components/SectionHeading';
+import { useDispatch } from 'react-redux';
+import { openDrawer } from '../store/drawerSlice';
+import { useGetTransactionsExpenseQuery } from '../services/transactionApi';
 
 const ExpenseDetailPage = () => {
-  const theme = useMantineTheme();
   const dispatch = useDispatch();
-  const { transactionsExpense, loading, page, hasMore } = useSelector(
-    (state) => state.transaction
-  );
+  const [page, setPage] = useState(1);
+  const [allTransactions, setAllTransactions] = useState([]);
 
-  useEffect(() => {
-    // Reset transactions and page when needed
-    // dispatch(resetTransactionsExpense());
+  const { data, isFetching } = useGetTransactionsExpenseQuery({
+    page,
+    limit: 10
+  });
 
-    // Fetch transactions if the page is 1
-    if (page === 1) {
-      dispatch(fetchTransactionsExpense({ page: 1, limit: 10 }));
-    }
-  }, [dispatch, page]);
+  const transactions = useMemo(() => data?.transactions || [], [data]);
+  const hasMore = transactions.length >= 10;
 
+  // Append new transactions to state
   const loadMore = () => {
-    if (!hasMore || loading) return;
-
-    // Fetch the next page of transactions
-    dispatch(fetchTransactionsExpense({ page, limit: 10 }));
+    if (hasMore && !isFetching) {
+      setPage((prev) => prev + 1);
+    }
   };
+
+  // Update combined transactions list when new page is fetched
+  useEffect(() => {
+    if (transactions.length > 0) {
+      setAllTransactions((prev) => [...prev, ...transactions]);
+    }
+  }, [transactions]);
+
   const handleOpenExpenseDrawer = (drawerId) => {
     dispatch(
       openDrawer({
@@ -47,12 +42,13 @@ const ExpenseDetailPage = () => {
       })
     );
   };
+
   return (
     <Box>
       <Group justify="space-between">
         <SectionHeading
-          title={'Expenses'}
-          description={'Income Transactions of July'}
+          title="Expenses"
+          description="Income Transactions of July"
         />
         <Button
           variant="light"
@@ -63,18 +59,17 @@ const ExpenseDetailPage = () => {
         </Button>
       </Group>
 
-      {/* Transaction List with Infin ite Scroll */}
       <InfiniteScroll
-        dataLength={transactionsExpense.length}
+        dataLength={allTransactions.length}
         next={loadMore}
         hasMore={hasMore}
         loader={<Loader size="sm" />}
-        scrollThreshold={0.9} // Trigger loading when scrolled to 90% of the list
+        scrollThreshold={0.9}
       >
         <Stack>
-          {transactionsExpense.map((transaction) => (
+          {allTransactions.map((transaction) => (
             <ExpenseTransactionDetailCard
-              key={transaction._id} // Ensure each key is unique
+              key={transaction._id}
               data={transaction}
             />
           ))}

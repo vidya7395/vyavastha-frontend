@@ -18,10 +18,12 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import api from '../api/axiosInstance';
-import { useDispatch, useSelector } from 'react-redux';
-import { addCategories, fetchCategories } from '../store/categorySlice';
+import {
+  useAddCategoryMutation,
+  useGetCategoriesQuery
+} from '../services/categoryApi';
 
-// Define validation schema using yup
+// Validation schema
 const schema = yup.object().shape({
   amount: yup.number().positive().required('Amount is required'),
   category: yup.string().required('Category is required'),
@@ -31,13 +33,12 @@ const schema = yup.object().shape({
 });
 
 const AddExpenseForm = () => {
-  // const [categories, setCategories] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [categoryValue, setCategoryValue] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const categoryFromStore = useSelector((state) => state.category.categories);
-  const dispatch = useDispatch();
-  // Initialize react-hook-form
+  const { data: categories = [] } = useGetCategoriesQuery();
+  const [addCategory] = useAddCategoryMutation();
+
   const {
     register,
     control,
@@ -57,37 +58,14 @@ const AddExpenseForm = () => {
     }
   });
 
-  // Sync local categoryValue with the form's 'category' field
   useEffect(() => {
     setValue('category', categoryValue);
   }, [categoryValue, setValue]);
 
-  // Fetch categories from API on mount
-  useEffect(() => {
-    const getCategories = async () => {
-      try {
-        console.log('Getting categories');
-
-        await dispatch(fetchCategories()).unwrap();
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        showNotification({
-          title: 'Error',
-          message: 'Failed to load categories',
-          color: 'red'
-        });
-      }
-    };
-    getCategories();
-  }, []);
-
-  // onSubmit handler
   const onSubmit = async (data) => {
-    console.log('Form data on submit:', data);
-    // Build expense object
     const newExpense = {
       amount: data.amount,
-      categoryId: categoryValue, // from our combobox state
+      categoryId: categoryValue,
       description: data.description,
       date: data.date.toISOString().split('T')[0],
       type: 'expense',
@@ -104,7 +82,6 @@ const AddExpenseForm = () => {
         message: 'Expense added successfully!',
         color: 'teal'
       });
-      // Reset the form and combobox field
       reset();
       setCategoryValue('');
     } catch (error) {
@@ -117,20 +94,17 @@ const AddExpenseForm = () => {
     }
   };
 
-  // Handle creating a new category from the combobox
   const handleCreateCategory = async () => {
     if (
       categoryValue &&
-      !categoryFromStore.some(
+      !categories.categories.some(
         (cat) => cat.name.toLowerCase() === categoryValue.toLowerCase()
       )
     ) {
       setIsCreatingCategory(true);
       try {
-        dispatch(addCategories({ categoryValue }));
-        // Set form category field to the new value
+        await addCategory(categoryValue).unwrap();
         setValue('category', categoryValue);
-        setIsCreatingCategory(false);
         showNotification({
           title: 'Success',
           message: 'Category added successfully!',
@@ -138,27 +112,22 @@ const AddExpenseForm = () => {
         });
       } catch (error) {
         console.error('Error adding category:', error);
-        setIsCreatingCategory(false);
         showNotification({
           title: 'Error',
           message: 'Failed to create category',
           color: 'red'
         });
+      } finally {
+        setIsCreatingCategory(false);
       }
     }
   };
 
-  // Combobox filtering logic
   const combobox = useCombobox();
-  const shouldFilterOptions = !categoryFromStore.some(
-    (item) => item.name === categoryValue
+  const categoriesList = categories.categories ?? [];
+  const filteredOptions = categoriesList.filter((item) =>
+    item.name.toLowerCase().includes(categoryValue.toLowerCase().trim())
   );
-  const filteredOptions = shouldFilterOptions
-    ? categoryFromStore.filter((item) =>
-        item.name.toLowerCase().includes(categoryValue.toLowerCase().trim())
-      )
-    : categoryFromStore;
-
   const options = filteredOptions.map((item) => (
     <Combobox.Option value={item.name} key={item._id}>
       {item.name}
@@ -167,15 +136,9 @@ const AddExpenseForm = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <Flex direction="column" gap="lg" mt={'xl'} px={'lg'}>
+      <Flex direction="column" gap="lg" mt="xl" px="lg">
         {/* Amount Input */}
-        <Flex
-          gap="xl"
-          justify="flex-start"
-          align="center"
-          direction="row"
-          wrap="nowrap"
-        >
+        <Flex gap="xl" align="center">
           <Text size="lg" style={{ width: 120 }}>
             Amount
           </Text>
@@ -185,18 +148,13 @@ const AddExpenseForm = () => {
             size="sm"
             {...register('amount')}
             placeholder="Enter amount"
-            error={errors.amount ? errors.amount.message : null}
+            error={errors.amount?.message}
           />
         </Flex>
-        {/* Date Picker Input via Controller */}
-        <Flex
-          gap="xl"
-          justify="flex-start"
-          align="center"
-          direction="row"
-          wrap="nowrap"
-        >
-          <Text style={{ width: 120 }} size="lg">
+
+        {/* Date Picker */}
+        <Flex gap="xl" align="center">
+          <Text size="lg" style={{ width: 120 }}>
             Date
           </Text>
           <Controller
@@ -210,19 +168,14 @@ const AddExpenseForm = () => {
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Select date"
-                error={errors.date ? errors.date.message : null}
+                error={errors.date?.message}
               />
             )}
           />
         </Flex>
-        {/* Combobox for Category */}
-        <Flex
-          gap="xl"
-          justify="flex-start"
-          align="center"
-          direction="row"
-          wrap="nowrap"
-        >
+
+        {/* Category Combobox */}
+        <Flex gap="xl" align="center">
           <Text size="lg" style={{ width: 120 }}>
             Category
           </Text>
@@ -246,9 +199,9 @@ const AddExpenseForm = () => {
                   setCategoryValue(e.target.value);
                   clearErrors('category');
                 }}
-                onClick={() => combobox.openDropdown()}
-                onFocus={() => combobox.openDropdown()}
-                onBlur={() => combobox.closeDropdown()}
+                onClick={combobox.openDropdown}
+                onFocus={combobox.openDropdown}
+                onBlur={combobox.closeDropdown}
               />
             </Combobox.Target>
             <Combobox.Dropdown>
@@ -275,14 +228,8 @@ const AddExpenseForm = () => {
           </Combobox>
         </Flex>
 
-        {/* Spending Type Select via Controller */}
-        <Flex
-          gap="xl"
-          justify="flex-start"
-          align="center"
-          direction="row"
-          wrap="nowrap"
-        >
+        {/* Spending Type Select */}
+        <Flex gap="xl" align="center">
           <Text size="lg" style={{ width: 120 }}>
             50-30-20 Rule
           </Text>
@@ -294,7 +241,6 @@ const AddExpenseForm = () => {
                 flex={1}
                 variant="unstyled"
                 size="sm"
-                checkIconPosition="right"
                 value={field.value}
                 onChange={field.onChange}
                 data={[
@@ -302,26 +248,26 @@ const AddExpenseForm = () => {
                   { value: 'wants', label: 'Wants' },
                   { value: 'savings', label: 'Savings' }
                 ]}
-                error={errors.spendingType ? errors.spendingType.message : null}
+                error={errors.spendingType?.message}
               />
             )}
           />
         </Flex>
+
         {/* Description Input */}
-        <Flex gap="sm" direction="column" wrap="nowrap">
-          <Text size="lg" style={{ width: 120 }} mb={0}>
+        <Flex gap="sm" direction="column">
+          <Text size="lg" mb={0}>
             Notes
           </Text>
           <Textarea
             variant="unstyled"
             size="sm"
-            flex={1}
-            mt={0}
             {...register('description')}
             placeholder="Add Notes"
-            error={errors.description ? errors.description.message : null}
+            error={errors.description?.message}
           />
         </Flex>
+
         <Group position="right" mt={30}>
           <Button type="submit">Add Expense</Button>
         </Group>

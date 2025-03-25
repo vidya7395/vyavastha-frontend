@@ -1,27 +1,21 @@
-import { Card, Divider, Flex, Grid, Text, Loader, Group } from '@mantine/core'; // Import Loader for better loading state
-import { enFormatter } from '../utils/helper';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTransactionSummary } from '../store/transactionSlice';
-import { useEffect } from 'react';
+import { Card, Divider, Flex, Grid, Text, Loader, Group } from '@mantine/core';
+import { enFormatter, getCurrentMonth } from '../utils/helper';
+import { useState } from 'react';
 import MonthSelector from './MonthSelector';
+import { useGetTransactionSummaryQuery } from '../services/transactionApi';
 
 const SynopsisCard = () => {
-  const dispatch = useDispatch();
-  const { summary, loading } = useSelector((state) => state.transaction);
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); // default month
 
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        await dispatch(fetchTransactionSummary('2025-02')).unwrap();
-      } catch (err) {
-        console.error('Not able to fetch the summary:', err);
-      }
-    };
+  const {
+    data: summary,
+    isLoading,
+    isError
+  } = useGetTransactionSummaryQuery(selectedMonth);
 
-    if (!summary) {
-      fetchSummary();
-    }
-  }, [dispatch, summary]); // Simplified dependency array
+  const handleMonthChange = (month) => {
+    setSelectedMonth(month);
+  };
 
   const {
     balance,
@@ -33,46 +27,48 @@ const SynopsisCard = () => {
     totalIncome,
     wants,
     wantsPercentage
-  } = summary || {}; // Handling case when summary is still null/undefined
-
-  const handleMonthChange = async (month) => {
-    await dispatch(fetchTransactionSummary(month)); // ✅ Fetch Data
-  };
+  } = summary || {};
 
   const gradientBackground =
     balance > 0
-      ? 'linear-gradient(135deg,rgb(1, 130, 108),rgb(1, 98, 103))' // ✅ Greenish-Teal (Positive)
-      : 'linear-gradient(135deg, #ff4b1f, #9f0404)'; // ✅ Premium Red (Negative)
+      ? 'linear-gradient(135deg,rgb(1, 130, 108),rgb(1, 98, 103))'
+      : 'linear-gradient(135deg, #ff4b1f, #9f0404)';
 
-  return loading ? (
-    <Card radius="md" padding="lg">
-      <Flex justify={'space-between'}>
-        <div>
-          <Text size="xl" fw={700}>
-            Your Financial Synopsis
-          </Text>
-          <Text size="md">
-            Manage all your expenses and get a detailed view of reports
-          </Text>
-        </div>
-        <MonthSelector onMonthChange={handleMonthChange} />
-      </Flex>
-      <Divider style={{ margin: '20px 0px' }} />
-      <Grid>
-        {/* Placeholder for loading */}
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        {/* Add more placeholder columns for other sections */}
-      </Grid>
-    </Card>
-  ) : (
+  if (isLoading) {
+    return (
+      <Card radius="md" padding="lg">
+        <Flex justify={'space-between'}>
+          <div>
+            <Text size="xl" fw={700}>
+              Your Financial Synopsis
+            </Text>
+            <Text size="md">
+              Manage all your expenses and get a detailed view of reports
+            </Text>
+          </div>
+          <MonthSelector onMonthChange={handleMonthChange} />
+        </Flex>
+        <Divider style={{ margin: '20px 0px' }} />
+        <Grid>
+          {[...Array(6)].map((_, i) => (
+            <Grid.Col span={2} key={i}>
+              <Loader size="lg" />
+            </Grid.Col>
+          ))}
+        </Grid>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card radius="md" padding="lg">
+        <Text color="red">Failed to load financial summary.</Text>
+      </Card>
+    );
+  }
+
+  return (
     <Card radius="md" padding="lg">
       <Flex justify={'space-between'}>
         <div>
@@ -112,7 +108,7 @@ const SynopsisCard = () => {
           radius="sm"
           style={{
             background: gradientBackground,
-            color: '#fff', // White text for contrast
+            color: '#fff',
             textAlign: 'center'
           }}
         >
@@ -123,10 +119,6 @@ const SynopsisCard = () => {
             {enFormatter.format(balance)}
           </Text>
         </Card>
-
-        {/* <Divider orientation="vertical" h={'40px'} my={'auto'} /> */}
-
-        {/* Needs, Wants, Savings */}
 
         <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
           <Text fw={700} size={'xs'}>

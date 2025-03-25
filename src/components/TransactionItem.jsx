@@ -21,7 +21,6 @@ const TransactionItem = ({
   const theme = useMantineTheme();
 
   function getBadgeColor(badge) {
-    debugger;
     switch (badge) {
       case TransactionType.Expense:
         return theme.colors.orange[9];

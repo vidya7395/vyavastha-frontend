@@ -21,7 +21,7 @@ const AddTransaction = () => {
         {selectedTab === 'expenses' ? (
           <AddExpenseForm></AddExpenseForm>
         ) : (
-          <h1>Yeeahh</h1>
+          <AddExpenseForm></AddExpenseForm>
         )}
       </div>
     </>
