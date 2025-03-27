@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Group, Loader, Stack } from '@mantine/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Box, Button, Group, Loader, Stack, Text } from '@mantine/core';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import ExpenseTransactionDetailCard from '../components/ExpenseTransactionDetailCard';
 import SectionHeading from '../components/SectionHeading';
@@ -10,24 +10,30 @@ import {
   useGetTransactionsIncomeQuery
 } from '../services/transactionApi';
 import PropTypes from 'prop-types';
+import { groupTransactionsByMonth } from '../utils/helper';
 
 const TransactionDetailPage = ({ isShowExpense }) => {
   const dispatch = useDispatch();
   const [page, setPage] = useState(1);
   const [allTransactions, setAllTransactions] = useState([]);
+  const title = isShowExpense ? 'Expenses' : 'Income';
+  const [dynamicDescription, setDynamicDescription] = useState(
+    `${title} Transactions`
+  );
 
+  const monthRefs = useRef({});
   const limit = 10;
 
+  // Get query data
   const expenseQuery = useGetTransactionsExpenseQuery({ page, limit });
   const incomeQuery = useGetTransactionsIncomeQuery({ page, limit });
 
-  const { data, isFetching, isLoading, refetch } = isShowExpense
+  const { data, isFetching, isLoading } = isShowExpense
     ? expenseQuery
     : incomeQuery;
 
   const transactions = useMemo(() => data?.transactions || [], [data]);
-
-  const hasMore = data?.transactions?.length === limit;
+  const hasMore = transactions.length === limit;
 
   const loadMore = () => {
     if (hasMore && !isFetching) {
@@ -35,19 +41,65 @@ const TransactionDetailPage = ({ isShowExpense }) => {
     }
   };
 
+  // Reset on tab change
+  useEffect(() => {
+    setAllTransactions([]);
+    setPage(1);
+  }, [isShowExpense]);
+
+  // Merge new transactions
   useEffect(() => {
     if (page === 1) {
-      setAllTransactions([]);
-    } else {
-      setAllTransactions((prev) => [...prev, ...transactions]);
-    }
-  }, [page]);
-
-  useEffect(() => {
-    if (page === 1 && transactions.length > 0) {
       setAllTransactions(transactions);
+    } else if (transactions.length > 0) {
+      setAllTransactions((prev) => {
+        const existingIds = new Set(prev.map((item) => item._id));
+        const newOnes = transactions.filter((t) => !existingIds.has(t._id));
+        return [...prev, ...newOnes];
+      });
     }
   }, [transactions]);
+
+  // Group transactions by month
+  const groupedTransactions = useMemo(
+    () => groupTransactionsByMonth(allTransactions),
+    [allTransactions]
+  );
+
+  // Intersection observer for month headers
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries.find((entry) => entry.isIntersecting);
+        if (visibleEntry) {
+          const month = Object.entries(monthRefs.current).find(
+            ([, el]) => el === visibleEntry.target
+          )?.[0];
+          if (month) {
+            setDynamicDescription(`${title} Transactions of ${month}`);
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      }
+    );
+
+    const monthElements = Object.values(monthRefs.current);
+    monthElements.forEach((el) => {
+      if (el) observer.observe(el);
+    });
+
+    // Immediately set first month as visible if needed
+    const firstMonth = Object.keys(monthRefs.current)[0];
+    if (firstMonth) {
+      setDynamicDescription(`${title} Transactions of ${firstMonth}`);
+    }
+
+    return () => observer.disconnect();
+  }, [groupedTransactions, title]);
 
   const handleOpenDrawer = () => {
     dispatch(
@@ -58,18 +110,24 @@ const TransactionDetailPage = ({ isShowExpense }) => {
     );
   };
 
-  const title = isShowExpense ? 'Expenses' : 'Income';
-  const description = `${title} Transactions of March`;
-
   return (
     <Box>
-      <Group justify="space-between" mb="md">
-        <SectionHeading title={title} description={description} />
+      {/* Sticky Header */}
+      <Group
+        justify="space-between"
+        mb="md"
+        pos="sticky"
+        top="60px"
+        bg="dark.7"
+        style={{ zIndex: 8 }}
+      >
+        <SectionHeading title={title} description={dynamicDescription} />
         <Button variant="light" size="xs" onClick={handleOpenDrawer}>
           {`Add ${title}`}
         </Button>
       </Group>
 
+      {/* Loader or Scrollable Transactions */}
       {isLoading && page === 1 ? (
         <Loader size="sm" />
       ) : (
@@ -81,11 +139,33 @@ const TransactionDetailPage = ({ isShowExpense }) => {
           scrollThreshold={0.9}
         >
           <Stack>
-            {allTransactions.map((transaction) => (
-              <ExpenseTransactionDetailCard
-                key={transaction._id}
-                data={transaction}
-              />
+            {Object.entries(groupedTransactions).map(([month, txns]) => (
+              <Box key={month}>
+                {/* Month Sticky Label */}
+                <Box
+                  pb="xs"
+                  ref={(el) => {
+                    if (el) {
+                      monthRefs.current[month] = el;
+                    }
+                  }}
+                >
+                  <Text size="sm" tt="uppercase" ta="center" fw={800}>
+                    {month}
+                  </Text>
+                </Box>
+
+                {txns.map((transaction) => (
+                  <Box
+                    mb="md"
+                    key={`${isShowExpense ? 'expense' : 'income'}-${
+                      transaction._id
+                    }`}
+                  >
+                    <ExpenseTransactionDetailCard data={transaction} />
+                  </Box>
+                ))}
+              </Box>
             ))}
           </Stack>
         </InfiniteScroll>
@@ -93,6 +173,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
     </Box>
   );
 };
+
 TransactionDetailPage.propTypes = {
   isShowExpense: PropTypes.bool.isRequired
 };

@@ -4,7 +4,6 @@ export const getCategory = async () => {
   const response = await api.get(`categories`, {
     withCredentials: true
   });
-  console.log('response', response.data);
   return response.data;
 };
 export const addCategory = async (categoryValue) => {

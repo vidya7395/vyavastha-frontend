@@ -1,60 +1,27 @@
-import { Badge, Box, Card, Flex, Text } from '@mantine/core';
 import PropTypes from 'prop-types';
-import { format } from 'date-fns';
 import TransactionItem from './TransactionItem';
 import { TransactionType } from '../utils/transactionTypes';
 
 const ExpenseTransactionDetailCard = ({ data }) => {
-  const { amount, spendingType, description, date } = data;
+  const { amount, spendingType, description, date, type, category, recurring } =
+    data;
+  const transactionDate = new Date(date);
+
+  const transaction = {
+    date: transactionDate.getDate(), // Extract day (e.g., 12)
+    month: transactionDate.toLocaleString('en-US', { month: 'short' }) // Extract the day from date
+  };
+
   return (
     <TransactionItem
       amount={amount}
-      badges={[spendingType]}
-      type={TransactionType.Expense}
+      category={category.name}
+      spendingType={spendingType}
+      type={type}
       title={description}
-      date={date}
+      date={`${transaction.date} ${transaction.month}`}
+      isRecurring={recurring}
     />
-    // <Card mt={20} style={{ position: 'relative' }} p={'sm'}>
-    //   <Badge
-    //     size="lg"
-    //     style={{
-    //       borderRadius: '0 0px 10px 10px',
-    //       position: 'absolute',
-    //       top: '0',
-    //       left: '50%',
-    //       transform: 'translateX(-50%)'
-    //     }}
-    //     variant="light"
-    //     color={
-    //       (spendingType == 'savings' && 'green') ||
-    //       (spendingType == 'needs' && 'blue') ||
-    //       (spendingType == 'wants' && 'yellow')
-    //     }
-    //   >
-    //     {spendingType}
-    //   </Badge>
-    //   <Flex
-    //     mt={10}
-    //     gap="md"
-    //     justify="space-between"
-    //     align="flex-start"
-    //     direction="row"
-    //     wrap="nowrap"
-    //   >
-    //     <Box>
-    //       <Text size="sm">{format(new Date(date), 'd MMMM yyyy')}</Text>
-    //       <Text size="lg" fw={700}>
-    //         {description}
-    //       </Text>
-    //     </Box>
-    //     <Box>
-    //       <Text size="lg" fw={700}>
-    //         {amount}
-    //       </Text>
-    //       <Text size="xs">Recurring</Text>
-    //     </Box>
-    //   </Flex>
-    // </Card>
   );
 };
 ExpenseTransactionDetailCard.propTypes = {
@@ -62,7 +29,10 @@ ExpenseTransactionDetailCard.propTypes = {
     amount: PropTypes.number.isRequired,
     spendingType: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired
+    date: PropTypes.string.isRequired,
+    type: PropTypes.oneOf([TransactionType.Expense, TransactionType.Income]),
+    category: PropTypes.string.isRequired,
+    recurring: PropTypes.bool.isRequired
   }).isRequired
 };
 

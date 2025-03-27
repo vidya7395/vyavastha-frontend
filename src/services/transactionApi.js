@@ -30,6 +30,14 @@ export const transactionApi = createApi({
       query: ({ page = 1, limit = 10 }) =>
         `/transaction/income?page=${page}&limit=${limit}`,
       providesTags: ['Transaction']
+    }),
+    addTransaction: builder.mutation({
+      query: (body) => ({
+        url: '/transaction',
+        method: 'POST',
+        body
+      }),
+      invalidatesTags: ['Transaction']
     })
   })
 });
@@ -39,5 +47,6 @@ export const {
   useGetRecentIncomeQuery,
   useGetRecentExpenseQuery,
   useGetTransactionsExpenseQuery,
-  useGetTransactionsIncomeQuery
+  useGetTransactionsIncomeQuery,
+  useAddTransactionMutation
 } = transactionApi;

@@ -9,7 +9,8 @@ import {
   ScrollArea,
   Flex,
   Text,
-  Textarea
+  Textarea,
+  Tooltip
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm, Controller } from 'react-hook-form';
@@ -17,12 +18,15 @@ import { showNotification } from '@mantine/notifications';
 import * as yup from 'yup';
 import PropTypes from 'prop-types';
 import { yupResolver } from '@hookform/resolvers/yup';
-
-import api from '../api/axiosInstance';
 import {
   useAddCategoryMutation,
   useGetCategoriesQuery
 } from '../services/categoryApi';
+import { useAddTransactionMutation } from '../services/transactionApi';
+import {
+  formatIndianCurrency,
+  getReadableAmountWithEmojiAndLabel
+} from '../utils/helper';
 
 // Validation schema
 const schema = yup.object().shape({
@@ -42,6 +46,11 @@ const AddExpenseForm = ({ isExpense }) => {
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const { data: categories = [] } = useGetCategoriesQuery();
   const [addCategory] = useAddCategoryMutation();
+  const [addTransaction] = useAddTransactionMutation();
+  const [amountDisplay, setAmountDisplay] = useState('');
+  const [readableAmount, setReadableAmount] = useState('');
+  const [amountEmoji, setAmountEmoji] = useState('');
+  const [amountLabel, setAmountLabel] = useState('');
 
   const {
     register,
@@ -81,9 +90,7 @@ const AddExpenseForm = ({ isExpense }) => {
     };
 
     try {
-      await api.post('http://localhost:3000/api/transaction', [newExpense], {
-        withCredentials: true
-      });
+      await addTransaction([newExpense]);
 
       if (isAddingExpense) {
         setTotalExpenses((prev) => prev + parseFloat(data.amount));
@@ -151,6 +158,22 @@ const AddExpenseForm = ({ isExpense }) => {
     </Combobox.Option>
   ));
 
+  const handleAmountChange = (e) => {
+    const input = e.target.value.replace(/,/g, '');
+    if (!/^\d*\.?\d*$/.test(input)) return;
+
+    const formatted = formatIndianCurrency(input);
+    setAmountDisplay(formatted);
+    setValue('amount', input);
+    clearErrors('amount');
+
+    const { text, emoji, label } =
+      getReadableAmountWithEmojiAndLabel(formatted);
+    setReadableAmount(text);
+    setAmountEmoji(emoji);
+    setAmountLabel(label);
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Flex direction="column" gap="lg" mt="xl" px="lg">
@@ -163,10 +186,16 @@ const AddExpenseForm = ({ isExpense }) => {
             flex={1}
             variant="unstyled"
             size="sm"
-            {...register('amount')}
             placeholder="Enter amount"
+            value={amountDisplay}
+            onChange={handleAmountChange}
             error={errors.amount?.message}
           />
+          <Tooltip label={amountLabel} withArrow>
+            <Text size="xs" color="dimmed" mt={-5} style={{ cursor: 'help' }}>
+              {amountEmoji} ~ ₹{readableAmount}
+            </Text>
+          </Tooltip>
         </Flex>
 
         {/* Date Picker */}
@@ -182,10 +211,12 @@ const AddExpenseForm = ({ isExpense }) => {
                 flex={1}
                 variant="unstyled"
                 size="sm"
+                defaultDate={new Date()}
                 value={field.value}
                 onChange={field.onChange}
                 placeholder="Select date"
                 error={errors.date?.message}
+                highlightToday
               />
             )}
           />
