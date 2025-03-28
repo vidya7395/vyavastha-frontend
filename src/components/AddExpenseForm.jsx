@@ -10,7 +10,9 @@ import {
   Flex,
   Text,
   Textarea,
-  Tooltip
+  Tooltip,
+  Switch,
+  Paper
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,17 +29,81 @@ import {
   formatIndianCurrency,
   getReadableAmountWithEmojiAndLabel
 } from '../utils/helper';
+import { frequencyLabelMap } from '../utils/spendingTypes';
+const safeDate = () =>
+  yup
+    .date()
+    .nullable()
+    .transform((curr, orig) =>
+      orig === 'null' || orig === '' || Array.isArray(orig) ? null : curr
+    );
 
-// Validation schema
 const schema = yup.object().shape({
-  amount: yup.number().positive().required('Amount is required'),
+  amount: yup
+    .number()
+    .typeError('Amount must be a number')
+    .positive('Amount must be positive')
+    .required('Amount is required'),
+
   category: yup.string().required('Category is required'),
+
   description: yup.string().required('Description is required'),
-  date: yup.date().required('Date is required'),
-  spendingType: yup.string().required('Spending Type is required')
+
+  date: safeDate().required('Date is required'),
+
+  spendingType: yup.string().required('Spending Type is required'),
+
+  recurring: yup.boolean(),
+
+  recurringFrequency: yup
+    .string()
+    .nullable()
+    .when('recurring', {
+      is: true,
+      then: (schema) =>
+        schema
+          .required('Frequency is required')
+          .oneOf(['daily', 'weekly', 'monthly', 'yearly']),
+      otherwise: (schema) => schema.nullable()
+    }),
+
+  recurringStartDate: safeDate(),
+
+  recurringEndDate: safeDate().when(
+    'recurringStartDate',
+    (startDate, schema) => {
+      if (startDate instanceof Date && !isNaN(startDate.getTime())) {
+        return schema.min(startDate, 'End date must be after start date');
+      }
+      return schema;
+    }
+  )
 });
 
 const AddExpenseForm = ({ isExpense }) => {
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    clearErrors,
+    reset,
+    watch
+  } = useForm({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      amount: '',
+      category: '',
+      description: '',
+      date: null,
+      spendingType: 'needs',
+      recurring: false,
+      recurringStartDate: null,
+      recurringEndDate: null,
+      recurringFrequency: ''
+    }
+  });
   const isAddingExpense = isExpense;
 
   const [totalExpenses, setTotalExpenses] = useState(0);
@@ -51,26 +117,42 @@ const AddExpenseForm = ({ isExpense }) => {
   const [readableAmount, setReadableAmount] = useState('');
   const [amountEmoji, setAmountEmoji] = useState('');
   const [amountLabel, setAmountLabel] = useState('');
+  const [isRecurring, setIsRecurring] = useState(false);
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    clearErrors,
-    reset
-  } = useForm({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      amount: '',
-      category: '',
-      description: '',
-      date: null,
-      spendingType: 'needs'
+  const watchDate = watch('date');
+  const watchStartDate = watch('recurringStartDate');
+  const watchEndDate = watch('recurringEndDate');
+  const watchFrequency = watch('recurringFrequency');
+  const watchRepeatCount = watch('recurringRepeatCount');
+  useEffect(() => {
+    if (
+      isRecurring &&
+      watchStartDate &&
+      watchFrequency &&
+      watchRepeatCount > 0
+    ) {
+      const next = new Date(watchStartDate);
+
+      switch (watchFrequency) {
+        case 'daily':
+          next.setDate(next.getDate() + (watchRepeatCount - 1));
+          break;
+        case 'weekly':
+          next.setDate(next.getDate() + 7 * (watchRepeatCount - 1));
+          break;
+        case 'monthly':
+          next.setMonth(next.getMonth() + (watchRepeatCount - 1));
+          break;
+        case 'yearly':
+          next.setFullYear(next.getFullYear() + (watchRepeatCount - 1));
+          break;
+        default:
+          break;
+      }
+
+      setValue('recurringEndDate', next);
     }
-  });
-
+  }, [isRecurring, watchStartDate, watchFrequency, watchRepeatCount, setValue]);
   useEffect(() => {
     setValue('spendingType', isAddingExpense ? 'needs' : 'savings');
   }, [isAddingExpense, setValue]);
@@ -79,6 +161,22 @@ const AddExpenseForm = ({ isExpense }) => {
     setValue('category', categoryValue);
   }, [categoryValue, setValue]);
 
+  useEffect(() => {
+    if (isRecurring && watchDate) {
+      setValue('recurringStartDate', watchDate);
+    }
+  }, [watchDate, isRecurring, setValue]);
+  useEffect(() => {
+    if (
+      isRecurring &&
+      watchStartDate &&
+      watchEndDate &&
+      new Date(watchEndDate) < new Date(watchStartDate)
+    ) {
+      setValue('recurringEndDate', null); // reset if invalid
+    }
+  }, [watchStartDate, watchEndDate, isRecurring, setValue]);
+
   const onSubmit = async (data) => {
     const newExpense = {
       amount: data.amount,
@@ -86,8 +184,24 @@ const AddExpenseForm = ({ isExpense }) => {
       description: data.description,
       date: data.date.toISOString().split('T')[0],
       type: isAddingExpense ? 'expense' : 'income',
-      spendingType: data.spendingType
+      spendingType: data.spendingType,
+      recurring: isRecurring
     };
+    if (isRecurring) {
+      newExpense.recurringStartDate = data.recurringStartDate
+        ?.toISOString()
+        .split('T')[0];
+      newExpense.recurringEndDate = data.recurringEndDate
+        ? data.recurringEndDate.toISOString().split('T')[0]
+        : undefined;
+      newExpense.recurringFrequency = data.recurringFrequency;
+    } else {
+      // If not recurring, explicitly set them to null or undefined to avoid partial payloads
+      newExpense.recurringStartDate = null;
+      newExpense.recurringEndDate = null;
+      newExpense.recurringFrequency = null;
+    }
+    console.log('Final payload:', newExpense);
 
     try {
       await addTransaction([newExpense]);
@@ -108,6 +222,12 @@ const AddExpenseForm = ({ isExpense }) => {
 
       reset();
       setCategoryValue('');
+      setCategoryValue('');
+      setAmountDisplay('');
+      setReadableAmount('');
+      setAmountEmoji('');
+      setAmountLabel('');
+      setIsRecurring(false);
     } catch (error) {
       console.error('Error adding transaction:', error);
       showNotification({
@@ -179,12 +299,12 @@ const AddExpenseForm = ({ isExpense }) => {
       <Flex direction="column" gap="lg" mt="xl" px="lg">
         {/* Amount Input */}
         <Flex gap="xl" align="center">
-          <Text size="lg" style={{ width: 120 }}>
+          <Text size="md" style={{ width: 120 }}>
             Amount
           </Text>
           <TextInput
             flex={1}
-            variant="unstyled"
+            variant="default"
             size="sm"
             placeholder="Enter amount"
             value={amountDisplay}
@@ -200,7 +320,7 @@ const AddExpenseForm = ({ isExpense }) => {
 
         {/* Date Picker */}
         <Flex gap="xl" align="center">
-          <Text size="lg" style={{ width: 120 }}>
+          <Text size="md" style={{ width: 120 }}>
             Date
           </Text>
           <Controller
@@ -209,7 +329,7 @@ const AddExpenseForm = ({ isExpense }) => {
             render={({ field }) => (
               <DatePickerInput
                 flex={1}
-                variant="unstyled"
+                variant="default"
                 size="sm"
                 defaultDate={new Date()}
                 value={field.value}
@@ -224,7 +344,7 @@ const AddExpenseForm = ({ isExpense }) => {
 
         {/* Category Combobox */}
         <Flex gap="xl" align="center">
-          <Text size="lg" style={{ width: 120 }}>
+          <Text size="md" style={{ width: 120 }}>
             Category
           </Text>
           <Combobox
@@ -239,7 +359,7 @@ const AddExpenseForm = ({ isExpense }) => {
           >
             <Combobox.Target>
               <TextInput
-                variant="unstyled"
+                variant="default"
                 size="sm"
                 placeholder="Choose or create"
                 value={categoryValue}
@@ -279,7 +399,7 @@ const AddExpenseForm = ({ isExpense }) => {
         {/* Spending Type Select */}
         {isAddingExpense && (
           <Flex gap="xl" align="center">
-            <Text size="lg" style={{ width: 120 }}>
+            <Text size="md" style={{ width: 120 }}>
               50-30-20 Rule
             </Text>
             <Controller
@@ -288,7 +408,7 @@ const AddExpenseForm = ({ isExpense }) => {
               render={({ field }) => (
                 <Select
                   flex={1}
-                  variant="unstyled"
+                  variant="default"
                   size="sm"
                   value={field.value}
                   onChange={field.onChange}
@@ -303,14 +423,129 @@ const AddExpenseForm = ({ isExpense }) => {
             />
           </Flex>
         )}
+        <Flex gap="xl" align="center">
+          <Text size="md" style={{ width: 120 }}>
+            Recurring
+          </Text>
+          <Switch
+            size="md"
+            onLabel="YES"
+            offLabel="NO"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.currentTarget.checked)}
+          />
+        </Flex>
+        {isRecurring && (
+          <Paper bg={'dark.8'} radius={'lg'} py={'lg'} px={'lg'}>
+            <Flex direction={'column'} gap={'lg'}>
+              {/* Recurring Start Date */}
+              <Flex gap="xl" align="center">
+                <Text size="sm" style={{ width: 120 }}>
+                  Start Date
+                </Text>
+                <Controller
+                  name="recurringStartDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerInput
+                      flex={1}
+                      variant="default"
+                      size="sm"
+                      value={field.value}
+                      onChange={(val) => field.onChange(val ?? null)}
+                      placeholder="Select start date"
+                    />
+                  )}
+                />
+              </Flex>
+
+              {/* Frequency */}
+              <Flex gap="xl" align="center">
+                <Text size="sm" style={{ width: 120 }}>
+                  Frequency
+                </Text>
+                <Controller
+                  name="recurringFrequency"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      flex={1}
+                      variant="default"
+                      size="sm"
+                      value={field.value}
+                      onChange={field.onChange}
+                      data={[
+                        { value: 'daily', label: 'Daily' },
+                        { value: 'weekly', label: 'Weekly' },
+                        { value: 'monthly', label: 'Monthly' },
+                        { value: 'yearly', label: 'Yearly' }
+                      ]}
+                    />
+                  )}
+                />
+              </Flex>
+              <Flex gap="xl" align="center">
+                <Text size="sm" style={{ width: 120 }}>
+                  Repeat
+                </Text>
+                <Controller
+                  name="recurringRepeatCount"
+                  control={control}
+                  render={({ field }) => (
+                    <Flex align="center" gap="xs" style={{ flex: 1 }}>
+                      <TextInput
+                        flex={1}
+                        variant="default"
+                        size="sm"
+                        placeholder="e.g. 10"
+                        type="number"
+                        min={1}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                      {watchFrequency && (
+                        <Text size="xs" color="dimmed">
+                          {frequencyLabelMap[watchFrequency] ?? ''}
+                        </Text>
+                      )}
+                    </Flex>
+                  )}
+                />
+              </Flex>
+
+              {/* Recurring End Date (optional) */}
+              <Flex gap="xl" align="center">
+                <Text size="sm" style={{ width: 120 }}>
+                  End Date
+                </Text>
+                <Controller
+                  name="recurringEndDate"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePickerInput
+                      flex={1}
+                      variant="default"
+                      size="sm"
+                      value={field.value}
+                      disabled={Boolean(watchRepeatCount)} // 👈 disable if repeat count used
+                      minDate={watch('recurringStartDate') || undefined}
+                      onChange={field.onChange}
+                      placeholder="Select end date (optional)"
+                    />
+                  )}
+                />
+              </Flex>
+            </Flex>
+          </Paper>
+        )}
 
         {/* Description Input */}
         <Flex gap="sm" direction="column">
-          <Text size="lg" mb={0}>
+          <Text size="md" mb={0}>
             Notes
           </Text>
           <Textarea
-            variant="unstyled"
+            variant="default"
             size="sm"
             {...register('description')}
             placeholder="Add Notes"

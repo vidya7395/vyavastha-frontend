@@ -58,7 +58,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
         return [...prev, ...newOnes];
       });
     }
-  }, [transactions]);
+  }, [page, transactions]);
 
   // Group transactions by month
   const groupedTransactions = useMemo(
@@ -143,6 +143,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
               <Box key={month}>
                 {/* Month Sticky Label */}
                 <Box
+                  className="month-label"
                   pb="xs"
                   ref={(el) => {
                     if (el) {

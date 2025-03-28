@@ -10,6 +10,7 @@ import {
 import { TransactionType } from '../utils/transactionTypes';
 import { SpendingType } from '../utils/spendingTypes';
 import PropTypes from 'prop-types';
+import api from '../api/axiosInstance';
 
 const TransactionItem = ({
   date,
@@ -18,7 +19,9 @@ const TransactionItem = ({
   category,
   type,
   spendingType,
-  isRecurring
+  isRecurring,
+  recurringDetails,
+  transactionId
 }) => {
   const theme = useMantineTheme();
 
@@ -43,53 +46,81 @@ const TransactionItem = ({
         return theme.colors.gray[9];
     }
   }
+  const handleDelete = async () => {
+    // Implement the delete functionality here
+    const response = await api.delete(`transaction/${transactionId}`, {
+      withCredentials: true
+    });
+    return response.data;
+  };
   return (
     <Paper radius={'md'} bg={theme.colors.dark[9]} p={'lg'} pos={'relative'}>
       <Group justify="space-between">
-        <Box>
+        <Box flex="1">
+          <Group
+            left={'0'}
+            right={'0'}
+            pos={'absolute'}
+            top={'0'}
+            m={'auto'}
+            align="center"
+            justify="center"
+          >
+            {/* <Badge variant="default" radius={'xs'}>
+              {category}
+            </Badge> */}
+            {/* {type === TransactionType.Expense && (
+              <Badge
+                variant="filled"
+                color={getBadgeColor(spendingType)}
+                radius={'xs'}
+              >
+                {spendingType}
+              </Badge>
+            )} */}
+          </Group>
           <Text fz={'sm'}>{date}</Text>
-          <Title c={'white'} order={3}>
-            {title}
-          </Title>
+          <Group>
+            <Title c={'white'} order={3}>
+              {category}
+            </Title>
+            {type === TransactionType.Expense && (
+              <Badge
+                variant="filled"
+                color={getBadgeColor(spendingType)}
+                radius={'xs'}
+              >
+                {spendingType}
+              </Badge>
+            )}
+          </Group>
+          <Text>{title}</Text>
         </Box>
 
-        <Group
-          left={'0'}
-          right={'0'}
-          pos={'absolute'}
-          top={'0'}
-          m={'auto'}
-          align="center"
-          justify="center"
-        >
-          <Badge variant="default" radius={'xs'}>
-            {category}
-          </Badge>
-          {type === TransactionType.Expense && (
-            <Badge
-              variant="filled"
-              color={getBadgeColor(spendingType)}
-              radius={'xs'}
-            >
-              {spendingType}
-            </Badge>
-          )}
-        </Group>
         <Box ta={'right'}>
           <Text c={'white'} fw={'bold'}>
             ₹ {amount}
           </Text>
-          {isRecurring && (
-            <Text size="xs" fs={'italic'}>
-              Recurring
-            </Text>
-          )}
+          <>
+            {isRecurring && (
+              <Text size="xs" fs={'italic'}>
+                Recurring
+              </Text>
+            )}
+            {recurringDetails && (
+              <Text size="xs" fs={'italic'}>
+                {`(${recurringDetails.remaining} remaining)`}
+              </Text>
+            )}
+            <button onClick={() => handleDelete()}>Delete</button>
+          </>
         </Box>
       </Group>
     </Paper>
   );
 };
 TransactionItem.propTypes = {
+  transactionId: PropTypes.string.optional,
   date: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   amount: PropTypes.number.isRequired,
@@ -99,7 +130,12 @@ TransactionItem.propTypes = {
   spendingType: PropTypes.string,
   category: PropTypes.shape({
     name: PropTypes.string.isRequired
-  }).isRequired
+  }).isRequired,
+  recurringDetails: PropTypes.shape({
+    totalOccurrences: PropTypes.number,
+    completedOccurrences: PropTypes.number,
+    remaining: PropTypes.number
+  }).optional
 };
 
 export default TransactionItem;
