@@ -34,7 +34,6 @@ const TransactionDetailPage = ({ isShowExpense }) => {
 
   const transactions = useMemo(() => data?.transactions || [], [data]);
   const hasMore = transactions.length === limit;
-
   const loadMore = () => {
     if (hasMore && !isFetching) {
       setPage((prev) => prev + 1);
@@ -121,7 +120,11 @@ const TransactionDetailPage = ({ isShowExpense }) => {
         bg="dark.7"
         style={{ zIndex: 8 }}
       >
-        <SectionHeading title={title} description={dynamicDescription} />
+        {/* <SectionHeading title={title} description={dynamicDescription} /> */}
+        <SectionHeading
+          title={title}
+          description={'Expenses Transactions by Month'}
+        />
         <Button variant="light" size="xs" onClick={handleOpenDrawer}>
           {`Add ${title}`}
         </Button>

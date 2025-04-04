@@ -46,6 +46,7 @@ const TransactionItem = ({
         return theme.colors.gray[9];
     }
   }
+
   const handleDelete = async () => {
     // Implement the delete functionality here
     const response = await api.delete(`transaction/${transactionId}`, {
@@ -103,16 +104,20 @@ const TransactionItem = ({
           </Text>
           <>
             {isRecurring && (
-              <Text size="xs" fs={'italic'}>
-                Recurring
-              </Text>
+              <Paper p={'xs'} bg={theme.colors.dark[8]} radius={'md'} my={'xs'}>
+                <Group>
+                  <Text size="xs" fs={'italic'}>
+                    Recurring
+                  </Text>
+                </Group>
+                {recurringDetails && (
+                  <Text size="xs" fs={'italic'}>
+                    {`(${recurringDetails.remaining}/${recurringDetails.totalOccurrences} remaining)`}
+                  </Text>
+                )}
+              </Paper>
             )}
-            {recurringDetails && (
-              <Text size="xs" fs={'italic'}>
-                {`(${recurringDetails.remaining} remaining)`}
-              </Text>
-            )}
-            <button onClick={() => handleDelete()}>Delete</button>
+            {/* <button onClick={() => handleDelete()}>Delete</button> */}
           </>
         </Box>
       </Group>

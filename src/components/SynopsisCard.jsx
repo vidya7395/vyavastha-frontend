@@ -1,4 +1,13 @@
-import { Card, Divider, Flex, Grid, Text, Loader, Group } from '@mantine/core';
+import {
+  Card,
+  Divider,
+  Flex,
+  Grid,
+  Text,
+  Loader,
+  Group,
+  Tooltip
+} from '@mantine/core';
 import { enFormatter, getCurrentMonth } from '../utils/helper';
 import { useState } from 'react';
 import MonthSelector from './MonthSelector';
@@ -19,15 +28,14 @@ const SynopsisCard = () => {
 
   const {
     balance,
-    needs,
     needsPercentage,
-    savings,
     savingsPercentage,
     totalExpense,
     totalIncome,
-    wants,
-    wantsPercentage
+    wantsPercentage,
+    breakdown
   } = summary || {};
+  const { needs, savings, wants } = breakdown || {};
 
   const gradientBackground =
     balance > 0
@@ -119,41 +127,70 @@ const SynopsisCard = () => {
             {enFormatter.format(balance)}
           </Text>
         </Card>
+        <Tooltip
+          label={needs.suggestion}
+          withArrow
+          position="top"
+          transitionDuration={200}
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Needs (50%)
+            </Text>
+            <Text
+              c={needs.percentage >= 50 ? 'red' : 'blue'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(needs.actual)}/
+              {enFormatter.format(needs.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
+        <Tooltip
+          label={wants.suggestion}
+          withArrow
+          position="top"
+          transitionDuration={200}
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Wants (30%)
+            </Text>
+            <Text
+              c={wants.percentage >= 30 ? 'red' : 'orange'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(wants.actual)}/
+              {enFormatter.format(wants.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
 
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Needs (50%)
-          </Text>
-          <Text c={needsPercentage >= 50 ? 'red' : 'blue'} fw={700} size={'sm'}>
-            {enFormatter.format(needs)}
-          </Text>
-        </Card>
-
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Wants (30%)
-          </Text>
-          <Text
-            c={wantsPercentage >= 30 ? 'red' : 'orange'}
-            fw={700}
-            size={'sm'}
-          >
-            {enFormatter.format(wants)}
-          </Text>
-        </Card>
-
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Savings (20%)
-          </Text>
-          <Text
-            c={savingsPercentage >= 20 ? 'green' : 'red'}
-            fw={700}
-            size={'sm'}
-          >
-            {enFormatter.format(savings)}
-          </Text>
-        </Card>
+        <Tooltip
+          label={savings.suggestion}
+          withArrow
+          position="top"
+          transitionDuration={200}
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Savings (20%)
+            </Text>
+            <Text
+              c={savings.percentage >= 20 ? 'green' : 'red'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(savings.actual)}/
+              {enFormatter.format(savings.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
       </Group>
     </Card>
   );

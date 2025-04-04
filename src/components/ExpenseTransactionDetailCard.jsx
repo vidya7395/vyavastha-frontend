@@ -49,7 +49,8 @@ ExpenseTransactionDetailCard.propTypes = {
       totalOccurrences: PropTypes.number,
       completedOccurrences: PropTypes.number,
       remaining: PropTypes.number
-    }).optional
+    }).optional,
+    recurringGroupId: PropTypes.string
   }).isRequired
 };
 
