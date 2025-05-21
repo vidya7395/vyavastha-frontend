@@ -22,9 +22,9 @@ const FinanceDashboard = () => {
         direction={{ base: 'column', md: 'row' }} // responsive layout
       >
         {/* Income Section */}
-        {/* <Box flex={1}>
+        <Box flex={1}>
           <TransactionDetailPage isShowExpense={false} />
-        </Box> */}
+        </Box>
 
         {/* Expense Section */}
         <Box flex={1}>

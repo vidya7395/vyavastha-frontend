@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+
 import {
   Button,
   TextInput,
@@ -182,17 +184,18 @@ const AddExpenseForm = ({ isExpense }) => {
       amount: data.amount,
       categoryId: categoryValue,
       description: data.description,
-      date: data.date.toISOString().split('T')[0],
+      date: format(data.date, 'yyyy-MM-dd'),
       type: isAddingExpense ? 'expense' : 'income',
       spendingType: data.spendingType,
       recurring: isRecurring
     };
     if (isRecurring) {
-      newExpense.recurringStartDate = data.recurringStartDate
-        ?.toISOString()
-        .split('T')[0];
+      newExpense.recurringStartDate = format(
+        data.recurringStartDate,
+        'yyyy-MM-dd'
+      );
       newExpense.recurringEndDate = data.recurringEndDate
-        ? data.recurringEndDate.toISOString().split('T')[0]
+        ? format(data.recurringEndDate, 'yyyy-MM-dd')
         : undefined;
       newExpense.recurringFrequency = data.recurringFrequency;
     } else {

@@ -7,6 +7,7 @@ import IncomeSection from '../components/IncomeSection';
 import ExpenseSection from '../components/ExpenseSection';
 import LearnPersonalFinance from '../components/LearnPersonalFinance';
 import { Flex, Grid, Loader, Text } from '@mantine/core';
+import ExpenseReportChartOfCategory from '../components/ExpenseReportChartOfCategory';
 
 const Dashboard = () => {
   const {
@@ -42,6 +43,7 @@ const Dashboard = () => {
           </Flex>
         </Grid.Col>
         <Grid.Col span={4}>
+          <ExpenseReportChartOfCategory />
           <LearnPersonalFinance />
         </Grid.Col>
       </Grid>

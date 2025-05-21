@@ -26,15 +26,7 @@ const SynopsisCard = () => {
     setSelectedMonth(month);
   };
 
-  const {
-    balance,
-    needsPercentage,
-    savingsPercentage,
-    totalExpense,
-    totalIncome,
-    wantsPercentage,
-    breakdown
-  } = summary || {};
+  const { balance, totalExpense, totalIncome, breakdown } = summary || {};
   const { needs, savings, wants } = breakdown || {};
 
   const gradientBackground =
@@ -131,7 +123,6 @@ const SynopsisCard = () => {
           label={needs.suggestion}
           withArrow
           position="top"
-          transitionDuration={200}
           transition="pop-top-right"
         >
           <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
@@ -152,7 +143,6 @@ const SynopsisCard = () => {
           label={wants.suggestion}
           withArrow
           position="top"
-          transitionDuration={200}
           transition="pop-top-right"
         >
           <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
@@ -174,7 +164,6 @@ const SynopsisCard = () => {
           label={savings.suggestion}
           withArrow
           position="top"
-          transitionDuration={200}
           transition="pop-top-right"
         >
           <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
