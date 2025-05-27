@@ -1,13 +1,13 @@
 import {
   Paper,
-  Title,
   Text,
   Loader,
   Center,
   Stack,
   useMantineTheme,
   Box,
-  Flex
+  Flex,
+  Card
 } from '@mantine/core';
 import {
   PieChart,
@@ -19,9 +19,10 @@ import {
 } from 'recharts';
 import { useGetReportsCategoryQuery } from '../services/reportsApi';
 import MonthSelector from './MonthSelector';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getCurrentMonth } from '../utils/helper';
 import SectionHeading from './SectionHeading';
+import { useGetSpendingInsightMutation } from '../services/aiApi';
 
 const COLORS = [
   '#0088FE',
@@ -31,10 +32,8 @@ const COLORS = [
   '#8884d8',
   '#a83279'
 ];
-
 const RADIAN = Math.PI / 180;
 
-// 🧠 Custom label component (inside pie)
 const renderCustomizedLabel = ({
   cx,
   cy,
@@ -54,7 +53,8 @@ const renderCustomizedLabel = ({
       fill="#fff"
       textAnchor="middle"
       dominantBaseline="central"
-      fontSize={12}
+      fontSize={15}
+      fontWeight={600}
     >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
@@ -63,15 +63,42 @@ const renderCustomizedLabel = ({
 
 const ExpenseReportChartOfCategory = () => {
   const theme = useMantineTheme();
-  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); // default month
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());
+  const [insight, setInsight] = useState('');
+  const [getSpendingInsight, { isLoading: insightLoading }] =
+    useGetSpendingInsightMutation();
 
   const {
     data: report,
-    isLoading,
+    isLoading: reportLoading,
     isError
-  } = useGetReportsCategoryQuery(selectedMonth); // Replace with dynamic month if needed
+  } = useGetReportsCategoryQuery(selectedMonth);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (report?.report?.length) {
+      const top6 = [...report.report]
+        .sort((a, b) => b.totalAmount - a.totalAmount)
+        .slice(0, 6)
+        .map((item) => ({
+          category: item.category,
+          totalAmount: item.totalAmount
+        }));
+
+      getSpendingInsight(top6)
+        .unwrap()
+        .then((res) => setInsight(res.summary))
+        .catch((err) => {
+          console.error('AI insight failed:', err);
+          setInsight('Could not generate insight.');
+        });
+    }
+  }, [report]);
+
+  const handleMonthChange = (month) => {
+    setSelectedMonth(month);
+  };
+
+  if (reportLoading) {
     return (
       <Center h={300}>
         <Loader size="md" color="blue" />
@@ -84,55 +111,81 @@ const ExpenseReportChartOfCategory = () => {
     value: item.totalAmount
   }));
 
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  const handleMonthChange = (month) => {
-    setSelectedMonth(month);
-  };
+  // const total = data.reduce((sum, d) => sum + d.value, 0);
+
   return (
     <>
       <Flex
         gap="md"
         justify="space-between"
-        align="center"
         direction="row"
         wrap="nowrap"
         mb={10}
         mt={30}
       >
         <SectionHeading
-          title={' Expense Breakdown by Category'}
-          description={'Where your money ran off to 💸'}
-        ></SectionHeading>
+          title="Expense Breakdown by Category"
+          description="Where your money ran off to 💸"
+        />
         <MonthSelector onMonthChange={handleMonthChange} />
       </Flex>
+
       <Paper
         withBorder
         shadow="md"
         radius="lg"
-        p="xl"
+        p="md"
         bg={theme.colors.dark[9]}
         mb="lg"
       >
         <Stack spacing="sm" align="center">
-          {/* 🗓️ Always show MonthSelector */}
-
-          {isLoading ? (
-            <Center h={300}>
-              <Loader size="md" color="blue" />
-            </Center>
-          ) : isError ? (
-            <Center h={300}>
-              <Text color="red">Failed to load chart data.</Text>
-            </Center>
+          {isError ? (
+            <Text color="red">Failed to load chart data.</Text>
           ) : !report?.report?.length ? (
-            <Center h={300}>
-              <Text color="dimmed">No data available for this month.</Text>
-            </Center>
+            <Text color="dimmed">No data available for this month.</Text>
           ) : (
             <>
-              <Text size="sm" color="dimmed">
-                Total: ₹{total.toLocaleString()}
-              </Text>
+              <Card
+                shadow="sm"
+                padding="md"
+                radius="md"
+                withBorder
+                w="100%"
+                bg={theme.colors.dark[9]}
+              >
+                <Text
+                  size="xs"
+                  c="gray"
+                  mb={4}
+                  fw={700}
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(to right, #f36961 20%, #759beb 60%, #65beb3 80%, #70db96 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                  tt="uppercase"
+                >
+                  ✨ Here’s what your money buddy thinks:
+                </Text>
+
+                {insightLoading ? (
+                  <Text size="sm">
+                    <span className="dot-loader">Thinking</span>
+                  </Text>
+                ) : (
+                  <Text
+                    size="md"
+                    fw={600}
+                    style={{
+                      lineHeight: 1.5
+                    }}
+                  >
+                    {insight}
+                  </Text>
+                )}
+              </Card>
+
               <Box w="100%" h={360}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -142,10 +195,15 @@ const ExpenseReportChartOfCategory = () => {
                       cy="50%"
                       innerRadius={60}
                       outerRadius={120}
-                      paddingAngle={4}
+                      paddingAngle={0}
                       dataKey="value"
                       labelLine={false}
                       label={renderCustomizedLabel}
+                      animationDuration={1000}
+                      animationEasing="ease-in-out"
+                      animationBegin={0}
+                      animationId={selectedMonth}
+                      isAnimationActive={true}
                     >
                       {data.map((entry, index) => (
                         <Cell

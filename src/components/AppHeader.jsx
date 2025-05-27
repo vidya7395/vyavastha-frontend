@@ -54,7 +54,6 @@ const AppHeader = () => {
               size={'md'}
             >
               {' '}
-              JC{' '}
             </Avatar>
           </Menu.Target>
 

@@ -26,8 +26,21 @@ export const authApi = createApi({
         method: 'POST'
       }),
       invalidatesTags: ['User'] // Clears cache on logout
+    }),
+    signup: builder.mutation({
+      query: ({ name, emailId, password }) => ({
+        url: '/auth/signup',
+        method: 'POST',
+        body: { name, emailId, password }
+      }),
+      invalidatesTags: ['User'] // Clears cache on logout
     })
   })
 });
 
-export const { useLoginMutation, useGetUserQuery, useLogoutMutation } = authApi;
+export const {
+  useLoginMutation,
+  useGetUserQuery,
+  useLogoutMutation,
+  useSignupMutation
+} = authApi;

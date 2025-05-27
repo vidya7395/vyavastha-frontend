@@ -8,6 +8,7 @@ import { authApi } from '../services/authApi';
 import { categoryApi } from '../services/categoryApi';
 import { transactionApi } from '../services/transactionApi';
 import { reportsApi } from '../services/reportsApi';
+import { aiApi } from '../services/aiApi';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     [categoryApi.reducerPath]: categoryApi.reducer,
     [transactionApi.reducerPath]: transactionApi.reducer,
     [reportsApi.reducerPath]: reportsApi.reducer,
+    [aiApi.reducerPath]: aiApi.reducer,
     // Add the RTK Query reducer
     // transaction: transactionReducer,
     modal: modalReducer,
@@ -27,7 +29,8 @@ export const store = configureStore({
       .concat(authApi.middleware)
       .concat(categoryApi.middleware)
       .concat(transactionApi.middleware)
-      .concat(reportsApi.middleware) // Add RTK Query middleware
+      .concat(reportsApi.middleware)
+      .concat(aiApi.middleware) // Add RTK Query middleware
 });
 
 export const RootState = store.getState(); // Use JavaScript instead of TypeScript
