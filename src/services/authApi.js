@@ -17,7 +17,7 @@ export const authApi = createApi({
       invalidatesTags: ['User'] // Clears cache to refresh user data
     }),
     getUser: builder.query({
-      query: () => '/auth/user',
+      query: () => '/auth/userDetail',
       providesTags: ['User'] // Caches user data
     }),
     logout: builder.mutation({

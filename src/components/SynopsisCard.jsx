@@ -8,20 +8,17 @@ import {
   Group,
   Tooltip,
   ActionIcon,
-  Box,
-  useMantineTheme,
   Transition
 } from '@mantine/core';
 import { enFormatter, getCurrentMonth } from '../utils/helper';
 import { useState } from 'react';
 import MonthSelector from './MonthSelector';
 import { useGetTransactionSummaryQuery } from '../services/transactionApi';
-import { IconCancel, IconEye, IconEyeOff } from '@tabler/icons-react';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
 import { useHover } from '@mantine/hooks';
+import SmartAssistantNotification from './SmartAssistantNotification';
 
 const SynopsisCard = () => {
-  const theme = useMantineTheme();
-
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); // default month
   const [incomeVisibility, setIncomeVisibility] = useState(false);
   const [balanceVisibility, setBalanceVisibility] = useState(false);
@@ -126,62 +123,11 @@ const SynopsisCard = () => {
             </Transition>
           </Group>
 
-          {aiInsight && (
-            <Card
-              shadow="sm"
-              radius="md"
-              p="md"
-              gap="sm"
-              bg={theme.colors.dark[7]}
-              style={{
-                position: 'relative',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {showInsight && (
-                <Group p="md" style={{ borderRadius: '8px' }}>
-                  <Flex
-                    justify={'space-between'}
-                    align="center"
-                    gap="sm"
-                    w={'100%'}
-                  >
-                    <Flex align="center" gap="sm">
-                      <Box
-                        w={32}
-                        h={32}
-                        bg="teal"
-                        style={{
-                          borderRadius: '50%',
-                          display: 'grid',
-                          placeItems: 'center'
-                        }}
-                      >
-                        <Text color="white" size="sm">
-                          🤖
-                        </Text>
-                      </Box>
-                      <Text size="xs" tt={'uppercase'} fw={700}>
-                        Your smart assistant says:
-                      </Text>
-                    </Flex>
-                    <ActionIcon
-                      variant="light"
-                      color="teal"
-                      onClick={() => setShowInsight(!showInsight)}
-                    >
-                      <IconCancel size={18} />
-                    </ActionIcon>
-                  </Flex>
-                  <Box>
-                    <Text size="sm" style={{ lineHeight: 1.5 }}>
-                      {aiInsight}
-                    </Text>
-                  </Box>
-                </Group>
-              )}
-            </Card>
-          )}
+          <SmartAssistantNotification
+            aiInsight={aiInsight}
+            showInsight={showInsight}
+            setShowInsight={setShowInsight}
+          />
         </div>
 
         <MonthSelector onMonthChange={handleMonthChange} />

@@ -17,6 +17,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
   const [page, setPage] = useState(1);
   const [allTransactions, setAllTransactions] = useState([]);
   const title = isShowExpense ? 'Expenses' : 'Income';
+
   const [dynamicDescription, setDynamicDescription] = useState(
     `${title} Transactions`
   );

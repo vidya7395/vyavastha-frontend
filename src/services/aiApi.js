@@ -14,9 +14,20 @@ export const aiApi = createApi({
         method: 'POST',
         body: { topSpends }
       })
+    }),
+    getParseTransactions: builder.mutation({
+      query: (text) => ({
+        url: '/ai/parse-transactions',
+        method: 'POST',
+        body: { text }
+      }),
+      invalidatesTags: ['aiResponse']
     })
   })
 });
 
 // ✅ Use `useGetCategoriesQuery` now
-export const { useGetSpendingInsightMutation } = aiApi;
+export const {
+  useGetSpendingInsightMutation,
+  useGetParseTransactionsMutation
+} = aiApi;
