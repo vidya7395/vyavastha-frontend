@@ -90,7 +90,6 @@ const SmartInput = ({ onParse }) => {
 
     try {
       const { parsed } = await getParseTransactions(formatted).unwrap();
-      console.log('🧠 Parsed from AI:', parsed);
       onParse(parsed); // optional
     } catch (err) {
       console.error('RTK parse error:', err);

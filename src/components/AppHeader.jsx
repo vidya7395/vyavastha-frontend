@@ -17,7 +17,6 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const [logout, { isLoading: logoutLoading }] = useLogoutMutation();
   const { data: user, isLoading: loadingUserDetail } = useGetUserQuery();
-  console.log('user', user);
 
   const handleLogout = async () => {
     try {
