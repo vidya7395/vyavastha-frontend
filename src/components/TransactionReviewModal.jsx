@@ -12,7 +12,7 @@ import {
   Stack
 } from '@mantine/core';
 import PropTypes from 'prop-types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AddExpenseForm from './AddExpenseForm'; // make sure this is reusable for both income/expense
 import { format } from 'date-fns';
 import {
@@ -25,38 +25,112 @@ import {
 import { useAddTransactionMutation } from '../services/transactionApi';
 import { showNotification } from '@mantine/notifications';
 
-const TransactionReviewModal = ({ opened, onClose, parsedTransactions }) => {
+const TransactionReviewModal = ({
+  opened,
+  onClose,
+  parsedTransactions,
+  setParsedTransactions
+}) => {
   const [submitted, setSubmitted] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [addTransaction] = useAddTransactionMutation();
+  const [submittingAll, setSubmittingAll] = useState(false);
 
   const handleSubmitSingle = async (transaction, index) => {
+    const safeDate =
+      transaction.date && !isNaN(new Date(transaction.date))
+        ? transaction.date
+        : new Date().toISOString();
+
+    const safeTransaction = {
+      ...transaction,
+      date: safeDate
+    };
+
     try {
-      await addTransaction([transaction]).unwrap();
-      setSubmitted((prev) => [...prev, index]);
+      await addTransaction([safeTransaction]).unwrap();
       showNotification({
         title: 'Submitted',
-        message: 'Transaction submitted',
+        message: 'Transaction submitted!',
         color: 'teal'
       });
+
+      setSubmitted((prev) => [...prev, index]);
+
+      setTimeout(() => {
+        setParsedTransactions((prev) => prev.filter((_, i) => i !== index));
+      }, 1000);
     } catch (error) {
-      console.error('Submit erroree:', error);
+      console.error('Submit error:', error);
       showNotification({
         title: 'Error',
-        message: 'Submission failed',
+        message: 'Submission failed!',
         color: 'red'
       });
     }
   };
 
   const handleSubmitAll = async () => {
-    for (let i = 0; i < parsedTransactions.length; i++) {
-      if (!submitted.includes(i)) {
-        await handleSubmitSingle(parsedTransactions[i], i);
+    if (parsedTransactions.length === 0) return;
+    setSubmittingAll(true);
+
+    showNotification({
+      id: 'submit-all',
+      title: 'Submitting...',
+      message: 'Submitting all transactions, please wait!',
+      color: 'blue',
+      loading: true,
+      autoClose: false
+    });
+
+    try {
+      for (let i = 0; i < parsedTransactions.length; i++) {
+        if (!submitted.includes(i)) {
+          // Validate and fix date
+          const txn = parsedTransactions[i];
+          const safeDate =
+            txn.date && !isNaN(new Date(txn.date))
+              ? txn.date
+              : new Date().toISOString();
+
+          const safeTxn = { ...txn, date: safeDate };
+
+          await addTransaction([safeTxn]).unwrap();
+          setSubmitted((prev) => [...prev, i]);
+
+          // Remove after a small delay for feedback
+          await new Promise((res) => setTimeout(res, 300)); // smoother UX
+          setParsedTransactions((prev) => prev.filter((_, idx) => idx !== i));
+        }
       }
+
+      showNotification({
+        id: 'submit-all',
+        title: 'All Done!',
+        message: 'All transactions submitted successfully 🎉',
+        color: 'teal',
+        autoClose: 3000
+      });
+
+      onClose(); // Close modal after all done
+      setSubmittingAll(false);
+    } catch (error) {
+      console.error('Submit All error:', error);
+      showNotification({
+        id: 'submit-all',
+        title: 'Error',
+        message: 'Some transactions failed to submit.',
+        color: 'red',
+        autoClose: 3000
+      });
     }
   };
 
+  useEffect(() => {
+    if (parsedTransactions.length === 0) {
+      onClose(); // Close the modal automatically
+    }
+  }, [parsedTransactions, onClose]);
   return (
     <Modal
       opened={opened}
@@ -75,10 +149,13 @@ const TransactionReviewModal = ({ opened, onClose, parsedTransactions }) => {
             {parsedTransactions.map((txn, idx) => {
               const isSubmitted = submitted.includes(idx);
               const isExpense = txn.type === 'expense';
-              const displayDate =
-                txn.date instanceof Date
-                  ? format(txn.date, 'dd MMM yyyy')
-                  : format(new Date(txn.date), 'dd MMM yyyy');
+              const displayDate = (() => {
+                let parsed = new Date(txn.date);
+                if (!txn.date || isNaN(parsed)) {
+                  parsed = new Date(); // fallback to today’s date
+                }
+                return format(parsed, 'dd MMM yyyy');
+              })();
 
               return (
                 <Paper
@@ -118,7 +195,13 @@ const TransactionReviewModal = ({ opened, onClose, parsedTransactions }) => {
                         </Group>
                         <AddExpenseForm
                           isExpense={isExpense}
-                          defaultValues={txn}
+                          defaultValues={{
+                            ...txn,
+                            date:
+                              txn.date && !isNaN(new Date(txn.date))
+                                ? new Date(txn.date)
+                                : new Date() // fallback to today as real Date object
+                          }}
                           onSubmitOverride={async (data) => {
                             await handleSubmitSingle(data, idx);
                             setEditingIndex(null);
@@ -243,11 +326,12 @@ const TransactionReviewModal = ({ opened, onClose, parsedTransactions }) => {
         <Button
           onClick={handleSubmitAll}
           disabled={
+            submittingAll ||
             parsedTransactions.length === 0 ||
             submitted.length === parsedTransactions.length
           }
         >
-          🚀 Submit All
+          Submit All
         </Button>
         <Button
           variant="default"
@@ -264,7 +348,8 @@ const TransactionReviewModal = ({ opened, onClose, parsedTransactions }) => {
 TransactionReviewModal.propTypes = {
   opened: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  parsedTransactions: PropTypes.arrayOf(PropTypes.object).isRequired
+  parsedTransactions: PropTypes.arrayOf(PropTypes.object).isRequired,
+  setParsedTransactions: PropTypes.func.isRequired // NEW
 };
 
 export default TransactionReviewModal;

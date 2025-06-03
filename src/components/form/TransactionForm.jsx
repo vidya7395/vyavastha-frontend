@@ -49,7 +49,7 @@ const TransactionForm = ({
       amount: defaultValues.amount ?? '',
       categoryId: defaultValues.categoryId ?? '',
       description: defaultValues.description ?? '',
-      date: defaultValues.date ?? null,
+      date: defaultValues.date ?? new Date(),
       spendingType: defaultValues.spendingType ?? 'needs',
       recurring: defaultValues.recurring ?? false,
       recurringStartDate: defaultValues.recurringStartDate ?? null,

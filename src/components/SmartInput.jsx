@@ -8,7 +8,8 @@ import {
   Stack,
   Paper,
   Divider,
-  ScrollArea
+  ScrollArea,
+  Loader
 } from '@mantine/core';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
@@ -16,6 +17,8 @@ import { useGetParseTransactionsMutation } from '../services/aiApi';
 
 const SmartInput = ({ onParse }) => {
   const [rawText, setRawText] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const [touchedLines, setTouchedLines] = useState(new Set());
   const parseLine = (line, index) => {
     const clean = line.replace(/^•\s*/, '').replace(/⚠️.*$/, '').trim();
@@ -89,10 +92,17 @@ const SmartInput = ({ onParse }) => {
     if (errors.length > 0) return;
 
     try {
+      setLoading(true); // Start the loader
       const { parsed } = await getParseTransactions(formatted).unwrap();
-      onParse(parsed); // optional
+      onParse(parsed);
+
+      // ✅ Clear the input field and reset touched lines after success
+      setRawText('');
+      setTouchedLines(new Set());
     } catch (err) {
       console.error('RTK parse error:', err);
+    } finally {
+      setLoading(false); // Stop the loader
     }
   };
 
@@ -112,6 +122,21 @@ const SmartInput = ({ onParse }) => {
 
   return (
     <Box mt="md" style={{ position: 'relative', paddingBottom: 70 }}>
+      {loading && (
+        <Box
+          pos="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg="rgba(0,0,0,0.5)"
+          style={{ zIndex: 1000 }}
+        >
+          <Group align="center" justify="center" style={{ height: '100%' }}>
+            <Loader size="lg" color="white" />
+          </Group>
+        </Box>
+      )}
       <Title order={2} mb="lg" ta="center">
         💡 Smart Transaction Input
       </Title>

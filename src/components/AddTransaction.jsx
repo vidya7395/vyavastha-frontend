@@ -18,6 +18,8 @@ const AddTransaction = ({ drawerId }) => {
   );
 
   const [useSmartInput, setUseSmartInput] = useState(true);
+  const [parsedTransactions, setParsedTransactions] = useState([]);
+
   const [parsedData, setParsedData] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const handleParsed = (parsed) => {
@@ -67,6 +69,7 @@ const AddTransaction = ({ drawerId }) => {
         opened={modalOpen}
         onClose={() => setModalOpen(false)}
         parsedTransactions={parsedData}
+        setParsedTransactions={setParsedTransactions}
       />
       ;
     </>
