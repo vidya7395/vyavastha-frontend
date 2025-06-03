@@ -16,11 +16,10 @@ const ExpenseSection = ({ recentExpenseData }) => {
       category: transaction.category.name, // Same as above
       type: transaction.type, // 'income' in this case
       amount: transaction.amount,
-      spendingType: transaction.spendingType // Default spendingType (change if required)
+      spendingType: transaction.spendingType, // Default spendingType (change if required),
+      isRecurring: transaction.recurring
     };
   });
-  console.log('element new');
-
   const openAddIncomeModal = () => {};
   return (
     <>
@@ -59,9 +58,10 @@ const ExpenseSection = ({ recentExpenseData }) => {
             amount={expense.amount}
             date={`${expense.date} ${expense.month}`}
             title={expense.description}
-            badges={[expense.category, expense.spendingType]}
+            category={expense.category}
+            spendingType={expense.spendingType}
             type={expense.type}
-            isRecurring={true}
+            isRecurring={expense.isRecurring}
           />
         ))}
       </Stack>
@@ -69,6 +69,7 @@ const ExpenseSection = ({ recentExpenseData }) => {
   );
 };
 ExpenseSection.propTypes = {
-  recentExpenseData: PropTypes.array.isRequired
+  recentExpenseData: PropTypes.array.isRequired,
+  isRecurring: PropTypes.bool.isRequired
 };
 export default ExpenseSection;

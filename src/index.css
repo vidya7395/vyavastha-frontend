@@ -7,3 +7,6 @@
   color: var(--mantine-color-white);
   font-weight: 700;
 }
+.month-label {
+  position: sticky;
+}

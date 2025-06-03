@@ -35,13 +35,8 @@ const categorySlice = createSlice({
       .addCase(fetchCategories.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchCategories.fulfilled, (state, action) => {
+      .addCase(fetchCategories.fulfilled, (state) => {
         state.loading = false;
-        console.log('action', action.payload);
-
-        // const { categories } = action.payload;
-        // console.log('categories', ...categories);
-        // state.categories = [...categories];
       })
       .addCase(fetchCategories.rejected, (state) => {
         state.transactionsExpense = [];
@@ -59,7 +54,6 @@ const categorySlice = createSlice({
           category,
           _id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`
         };
-        console.log('categories', category);
         state.categories = [...state.categories, newCategory];
       })
       .addCase(addCategories.rejected, (state) => {

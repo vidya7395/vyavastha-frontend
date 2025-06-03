@@ -1,88 +1,135 @@
-import { Card, Divider, Flex, Grid, Text, Loader, Group } from '@mantine/core'; // Import Loader for better loading state
-import { enFormatter } from '../utils/helper';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTransactionSummary } from '../store/transactionSlice';
-import { useEffect } from 'react';
+import {
+  Card,
+  Divider,
+  Flex,
+  Grid,
+  Text,
+  Loader,
+  Group,
+  Tooltip,
+  ActionIcon,
+  Transition
+} from '@mantine/core';
+import { enFormatter, getCurrentMonth } from '../utils/helper';
+import { useState } from 'react';
 import MonthSelector from './MonthSelector';
+import { useGetTransactionSummaryQuery } from '../services/transactionApi';
+import { IconEye, IconEyeOff } from '@tabler/icons-react';
+import { useHover } from '@mantine/hooks';
+import SmartAssistantNotification from './SmartAssistantNotification';
 
 const SynopsisCard = () => {
-  const dispatch = useDispatch();
-  const { summary, loading } = useSelector((state) => state.transaction);
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        await dispatch(fetchTransactionSummary('2025-02')).unwrap();
-      } catch (err) {
-        console.error('Not able to fetch the summary:', err);
-      }
-    };
-
-    if (!summary) {
-      fetchSummary();
-    }
-  }, [dispatch, summary]); // Simplified dependency array
+  const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth()); // default month
+  const [incomeVisibility, setIncomeVisibility] = useState(false);
+  const [balanceVisibility, setBalanceVisibility] = useState(false);
+  const [showInsight, setShowInsight] = useState(false);
+  const { hovered, ref } = useHover();
 
   const {
-    balance,
-    needs,
-    needsPercentage,
-    savings,
-    savingsPercentage,
-    totalExpense,
-    totalIncome,
-    wants,
-    wantsPercentage
-  } = summary || {}; // Handling case when summary is still null/undefined
+    data: summary,
+    isLoading,
+    isError
+  } = useGetTransactionSummaryQuery(selectedMonth);
 
-  const handleMonthChange = async (month) => {
-    await dispatch(fetchTransactionSummary(month)); // ✅ Fetch Data
+  const handleMonthChange = (month) => {
+    setSelectedMonth(month);
   };
+
+  const { balance, totalExpense, totalIncome, breakdown, aiInsight } =
+    summary || {};
+
+  const { needs, savings, wants } = breakdown || {};
 
   const gradientBackground =
     balance > 0
-      ? 'linear-gradient(135deg,rgb(1, 130, 108),rgb(1, 98, 103))' // ✅ Greenish-Teal (Positive)
-      : 'linear-gradient(135deg, #ff4b1f, #9f0404)'; // ✅ Premium Red (Negative)
+      ? 'linear-gradient(135deg,rgb(1, 130, 108),rgb(1, 98, 103))'
+      : 'linear-gradient(135deg, #ff4b1f, #9f0404)';
 
-  return loading ? (
+  if (isLoading) {
+    return (
+      <Card radius="md" padding="lg">
+        <Flex justify={'space-between'}>
+          <div>
+            <Text size="xl" fw={700}>
+              Your Financial Synopsis
+            </Text>
+            <Text size="md">
+              Manage all your expenses and get a detailed view of reports
+            </Text>
+          </div>
+          <MonthSelector onMonthChange={handleMonthChange} />
+        </Flex>
+        <Divider style={{ margin: '20px 0px' }} />
+        <Grid>
+          {[...Array(6)].map((_, i) => (
+            <Grid.Col span={2} key={i}>
+              <Loader size="lg" />
+            </Grid.Col>
+          ))}
+        </Grid>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card radius="md" padding="lg">
+        <Text color="red">Failed to load financial summary.</Text>
+      </Card>
+    );
+  }
+
+  return (
     <Card radius="md" padding="lg">
       <Flex justify={'space-between'}>
         <div>
           <Text size="xl" fw={700}>
             Your Financial Synopsis
           </Text>
-          <Text size="md">
-            Manage all your expenses and get a detailed view of reports
-          </Text>
+
+          <Group
+            ref={ref}
+            onClick={() => setShowInsight(!showInsight)}
+            spacing="xs"
+            style={{
+              cursor: 'pointer',
+              borderRadius: 8
+            }}
+          >
+            <Text
+              size="sm"
+              fw={500}
+              style={{
+                backgroundImage:
+                  'linear-gradient(to right, #f36961 20%, #759beb 60%, #65beb3 80%, #70db96 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              ✨ Click to see what your financial buddy says
+            </Text>
+
+            <Transition
+              mounted={hovered}
+              transition="slide-right"
+              duration={300}
+              timingFunction="ease"
+            >
+              {(styles) => (
+                <Text size="sm" style={{ ...styles }}>
+                  👈
+                </Text>
+              )}
+            </Transition>
+          </Group>
+
+          <SmartAssistantNotification
+            aiInsight={aiInsight}
+            showInsight={showInsight}
+            setShowInsight={setShowInsight}
+          />
         </div>
-        <MonthSelector onMonthChange={handleMonthChange} />
-      </Flex>
-      <Divider style={{ margin: '20px 0px' }} />
-      <Grid>
-        {/* Placeholder for loading */}
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        <Grid.Col span={2}>
-          <Loader size="lg" />
-        </Grid.Col>
-        {/* Add more placeholder columns for other sections */}
-      </Grid>
-    </Card>
-  ) : (
-    <Card radius="md" padding="lg">
-      <Flex justify={'space-between'}>
-        <div>
-          <Text size="xl" fw={700}>
-            Your Financial Synopsis
-          </Text>
-          <Text size="md">
-            Manage your all expenses and get a detailed view of reports
-          </Text>
-        </div>
+
         <MonthSelector onMonthChange={handleMonthChange} />
       </Flex>
       <Divider style={{ margin: '20px 0px' }} />
@@ -92,9 +139,35 @@ const SynopsisCard = () => {
           <Text fw={700} size={'xs'}>
             Total Income
           </Text>
-          <Text c="green" fw={700} size={'sm'}>
-            {enFormatter.format(totalIncome)}
-          </Text>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Text
+              c="green"
+              fw={700}
+              size="sm"
+              style={{
+                transition: 'filter 0.3s, opacity 0.3s',
+                filter: incomeVisibility ? 'none' : 'blur(5px)',
+                opacity: incomeVisibility ? 1 : 0.6
+              }}
+            >
+              {enFormatter.format(totalIncome)}
+            </Text>
+
+            <Tooltip label={incomeVisibility ? 'Hide' : 'Show'} withArrow>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                onClick={() => setIncomeVisibility((v) => !v)}
+                aria-label="Toggle income visibility"
+              >
+                {incomeVisibility ? (
+                  <IconEyeOff size={18} />
+                ) : (
+                  <IconEye size={18} />
+                )}
+              </ActionIcon>
+            </Tooltip>
+          </div>
         </Card>
 
         <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
@@ -112,56 +185,104 @@ const SynopsisCard = () => {
           radius="sm"
           style={{
             background: gradientBackground,
-            color: '#fff', // White text for contrast
+            color: '#fff',
             textAlign: 'center'
           }}
         >
           <Text fw={700} size="xs" style={{ opacity: 0.9 }}>
             Balance
           </Text>
-          <Text fw={700} size="sm">
-            {enFormatter.format(balance)}
-          </Text>
+
+          <Group align="center" justify="center">
+            <Text
+              fw={700}
+              size="sm"
+              style={{
+                transition: 'filter 0.3s, opacity 0.3s',
+                filter: balanceVisibility ? 'none' : 'blur(5px)',
+                opacity: balanceVisibility ? 1 : 0.6
+              }}
+            >
+              {enFormatter.format(balance)}
+            </Text>
+
+            <Tooltip label={balanceVisibility ? 'Hide' : 'Show'} withArrow>
+              <ActionIcon
+                size="sm"
+                variant="subtle"
+                onClick={() => setBalanceVisibility((v) => !v)}
+                aria-label="Toggle income visibility"
+              >
+                {balanceVisibility ? (
+                  <IconEyeOff size={18} />
+                ) : (
+                  <IconEye size={18} />
+                )}
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         </Card>
+        <Tooltip
+          label={needs.suggestion}
+          withArrow
+          position="top"
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Needs (50%)
+            </Text>
+            <Text
+              c={needs.percentage >= 50 ? 'red' : 'blue'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(needs.actual)}/
+              {enFormatter.format(needs.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
+        <Tooltip
+          label={wants.suggestion}
+          withArrow
+          position="top"
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Wants (30%)
+            </Text>
+            <Text
+              c={wants.percentage >= 30 ? 'red' : 'orange'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(wants.actual)}/
+              {enFormatter.format(wants.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
 
-        {/* <Divider orientation="vertical" h={'40px'} my={'auto'} /> */}
-
-        {/* Needs, Wants, Savings */}
-
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Needs (50%)
-          </Text>
-          <Text c={needsPercentage >= 50 ? 'red' : 'blue'} fw={700} size={'sm'}>
-            {enFormatter.format(needs)}
-          </Text>
-        </Card>
-
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Wants (30%)
-          </Text>
-          <Text
-            c={wantsPercentage >= 30 ? 'red' : 'orange'}
-            fw={700}
-            size={'sm'}
-          >
-            {enFormatter.format(wants)}
-          </Text>
-        </Card>
-
-        <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
-          <Text fw={700} size={'xs'}>
-            Savings (20%)
-          </Text>
-          <Text
-            c={savingsPercentage >= 20 ? 'green' : 'red'}
-            fw={700}
-            size={'sm'}
-          >
-            {enFormatter.format(savings)}
-          </Text>
-        </Card>
+        <Tooltip
+          label={savings.suggestion}
+          withArrow
+          position="top"
+          transition="pop-top-right"
+        >
+          <Card shadow="sm" style={{ backgroundColor: '#18201D' }}>
+            <Text fw={700} size={'xs'}>
+              Savings (20%)
+            </Text>
+            <Text
+              c={savings.percentage >= 20 ? 'green' : 'red'}
+              fw={700}
+              size={'sm'}
+            >
+              {enFormatter.format(savings.actual)}/
+              {enFormatter.format(savings.ideal)}
+            </Text>
+          </Card>
+        </Tooltip>
       </Group>
     </Card>
   );

@@ -8,7 +8,6 @@ const drawerSlice = createSlice({
   reducers: {
     openDrawer: (state, action) => {
       const { id, contentType } = action.payload;
-      console.log('reached here');
       state[id] = {
         isOpen: true,
         contentType

@@ -1,78 +1,52 @@
-import { useEffect, useState } from 'react';
-import SynopsisCard from '../components/SynopsisCard';
-import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchRecentExpense,
-  fetchRecentIncome
-} from '../store/transactionSlice';
+  useGetRecentIncomeQuery,
+  useGetRecentExpenseQuery
+} from '../services/transactionApi';
+import SynopsisCard from '../components/SynopsisCard';
 import IncomeSection from '../components/IncomeSection';
-// import ExpenseSection from "../components/ExpenseSection";
-import { Flex, Grid } from '@mantine/core';
 import ExpenseSection from '../components/ExpenseSection';
 import LearnPersonalFinance from '../components/LearnPersonalFinance';
+import { Flex, Grid, Loader, Text } from '@mantine/core';
+import ExpenseReportChartOfCategory from '../components/ExpenseReportChartOfCategory';
 
 const Dashboard = () => {
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState(true);
-  const { recentIncome } = useSelector((state) => state.transaction);
-  const { recentExpense } = useSelector((state) => state.transaction);
-  useEffect(() => {
-    const fetchRecentIncomes = async () => {
-      try {
-        await dispatch(fetchRecentIncome())
-          .unwrap()
-          .finally(() => setLoading(false));
-      } catch (err) {
-        console.error('Not able to fetched the recent income:', err);
-      }
-    };
-    if (!recentIncome) {
-      fetchRecentIncomes();
-    }
-    console.log('Recent Income', recentIncome);
-  }, [dispatch, recentIncome]);
-  useEffect(() => {
-    const fetchRecentExpenses = async () => {
-      try {
-        await dispatch(fetchRecentExpense())
-          .unwrap()
-          .finally(() => setLoading(false));
-      } catch (err) {
-        console.error('Not able to fetched the recent expenses:', err);
-      }
-    };
-    if (!recentExpense) {
-      fetchRecentExpenses();
-    }
-    console.log('Recent Expense', recentExpense);
-  }, [dispatch, recentExpense]);
+  const {
+    data: recentIncome,
+    isLoading: isIncomeLoading,
+    isError: isIncomeError
+  } = useGetRecentIncomeQuery();
 
-  return loading ? (
-    <h1>Loading</h1>
-  ) : (
+  const {
+    data: recentExpense,
+    isLoading: isExpenseLoading,
+    isError: isExpenseError
+  } = useGetRecentExpenseQuery();
+
+  const isLoading = isIncomeLoading || isExpenseLoading;
+
+  if (isLoading) return <Loader mt="xl" />;
+  if (isIncomeError || isExpenseError) {
+    return <Text color="red">Failed to load dashboard data.</Text>;
+  }
+
+  return (
     <>
-      <SynopsisCard></SynopsisCard>
+      <SynopsisCard />
 
-      <Grid gutter={'xl'} mt={'xl'}>
+      <Grid gutter="xl" mt="xl">
         <Grid.Col span={8}>
-          {/* Income section */}
-          <Flex direction={'column'}>
-            {recentIncome && (
-              <IncomeSection recentIncomeData={recentIncome}></IncomeSection>
-            )}
+          <Flex direction="column">
+            {recentIncome && <IncomeSection recentIncomeData={recentIncome} />}
             {recentExpense && (
-              <ExpenseSection
-                recentExpenseData={recentExpense}
-              ></ExpenseSection>
+              <ExpenseSection recentExpenseData={recentExpense} />
             )}
           </Flex>
         </Grid.Col>
         <Grid.Col span={4}>
+          <ExpenseReportChartOfCategory />
           <LearnPersonalFinance />
         </Grid.Col>
       </Grid>
-
-      {/* Expense section */}
     </>
   );
 };

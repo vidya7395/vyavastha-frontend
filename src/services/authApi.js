@@ -17,7 +17,7 @@ export const authApi = createApi({
       invalidatesTags: ['User'] // Clears cache to refresh user data
     }),
     getUser: builder.query({
-      query: () => '/auth/user',
+      query: () => '/auth/userDetail',
       providesTags: ['User'] // Caches user data
     }),
     logout: builder.mutation({
@@ -26,8 +26,21 @@ export const authApi = createApi({
         method: 'POST'
       }),
       invalidatesTags: ['User'] // Clears cache on logout
+    }),
+    signup: builder.mutation({
+      query: ({ name, emailId, password }) => ({
+        url: '/auth/signup',
+        method: 'POST',
+        body: { name, emailId, password }
+      }),
+      invalidatesTags: ['User'] // Clears cache on logout
     })
   })
 });
 
-export const { useLoginMutation, useGetUserQuery, useLogoutMutation } = authApi;
+export const {
+  useLoginMutation,
+  useGetUserQuery,
+  useLogoutMutation,
+  useSignupMutation
+} = authApi;
