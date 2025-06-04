@@ -79,8 +79,7 @@ const TransactionReviewModal = ({
       title: 'Submitting...',
       message: 'Submitting all transactions, please wait!',
       color: 'blue',
-      loading: true,
-      autoClose: false
+      loading: true
     });
 
     try {
