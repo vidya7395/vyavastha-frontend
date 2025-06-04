@@ -71,15 +71,19 @@ const TransactionForm = ({
 
   useEffect(() => {
     if (defaultValues) {
+      console.log('rawAmount', defaultValues);
       const rawAmount = String(defaultValues.amount ?? '');
-      const formatted = formatIndianCurrency(rawAmount);
-      const { text, emoji, label } =
-        getReadableAmountWithEmojiAndLabel(formatted);
 
-      setAmountDisplay(formatted);
-      setReadableAmount(text);
-      setAmountEmoji(emoji);
-      setAmountLabel(label);
+      const formatted = formatIndianCurrency(rawAmount);
+      // const { text, emoji, label } =
+      getReadableAmountWithEmojiAndLabel(formatted);
+
+      // setAmountDisplay(formatted);
+      console.log('formatted', formatted);
+
+      // setReadableAmount(text);
+      // setAmountEmoji(emoji);
+      // setAmountLabel(label);
       setIsRecurring(defaultValues.recurring ?? false);
       if (defaultValues.categoryId) {
         setCategoryValue(defaultValues.categoryId ?? '');
@@ -97,16 +101,25 @@ const TransactionForm = ({
   });
 
   const handleAmountChange = (e) => {
-    const raw = String(e.target.value ?? '');
-    const input = raw.replace(/,/g, '');
+    let raw = e.target.value ?? '';
 
-    if (!/^[\d]*\.?[\d]*$/.test(input)) return;
+    // Remove commas from the input for numeric parsing
+    const numeric = raw.replace(/,/g, '');
 
-    const formatted = formatIndianCurrency(input);
+    // Only digits allowed
+    if (!/^\d*$/.test(numeric)) return;
+
+    // Format the number for display
+    const formatted = formatIndianCurrency(numeric);
+
+    // ✅ Input field shows formatted string
     setAmountDisplay(formatted);
-    setValue('amount', input);
+
+    // ✅ Form state uses unformatted numeric string
+    setValue('amount', numeric);
     clearErrors('amount');
 
+    // ✅ Update formatted fancy display
     const { text, emoji, label } =
       getReadableAmountWithEmojiAndLabel(formatted);
     setReadableAmount(text);
