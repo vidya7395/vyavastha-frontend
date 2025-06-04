@@ -13,41 +13,43 @@ const FinanceDashboard = lazy(() => import('./pages/FinanceDashboard'));
 
 function App() {
   return (
-    <BrowserRouter basename="/">
-      <Routes>
-        <Route index element={<LoginPage />} />
+    <>
+      <BrowserRouter basename="/">
+        <Routes>
+          <Route index element={<LoginPage />} />
 
-        {/* ✅ Protected Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route
-            path="/dashboard"
-            element={
-              <Suspense
-                fallback={
-                  <span style={{ fontSize: 12 }}>Loading dashboard...</span>
-                }
-              >
-                <Dashboard />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/finance"
-            element={
-              <Suspense
-                fallback={
-                  <span style={{ fontSize: 12 }}>Loading finance...</span>
-                }
-              >
-                <FinanceDashboard />
-              </Suspense>
-            }
-          />
-          <Route path="/setting" element={<ComingSoon />} />
-          <Route path="/help" element={<ComingSoon />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          {/* ✅ Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route
+              path="/dashboard"
+              element={
+                <Suspense
+                  fallback={
+                    <span style={{ fontSize: 12 }}>Loading dashboard...</span>
+                  }
+                >
+                  <Dashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/finance"
+              element={
+                <Suspense
+                  fallback={
+                    <span style={{ fontSize: 12 }}>Loading finance...</span>
+                  }
+                >
+                  <FinanceDashboard />
+                </Suspense>
+              }
+            />
+            <Route path="/setting" element={<ComingSoon />} />
+            <Route path="/help" element={<ComingSoon />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 
