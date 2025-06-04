@@ -1,10 +1,11 @@
 // services/transactionApi.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { BASE_URL } from '../utils/const';
 
 export const transactionApi = createApi({
   reducerPath: 'transactionApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000/api',
+    baseUrl: BASE_URL,
     credentials: 'include'
   }),
   tagTypes: ['Transaction'],

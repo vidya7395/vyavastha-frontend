@@ -20,3 +20,6 @@ export const getStatusColorSpending = (status) => {
       return 'black';
   }
 };
+
+
+export const BASE_URL = "/api"

@@ -1,9 +1,10 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { BASE_URL } from '../utils/const';
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000/api',
+    baseUrl: BASE_URL,
     credentials: 'include' // Important! Ensures cookies are sent with requests
   }),
   tagTypes: ['User'], // Helps with caching
