@@ -21,7 +21,7 @@ export const transactionSchema = yup.object().shape({
 
   date: safeDate().required('Date is required'),
 
-  spendingType: yup.string().required('Spending Type is required'),
+  spendingType: yup.string().oneOf(['needs', 'wants', 'savings']).required(),
 
   recurring: yup.boolean(),
 

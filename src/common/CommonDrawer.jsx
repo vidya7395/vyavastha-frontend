@@ -7,6 +7,7 @@ import AddTransaction from '../components/AddTransaction'; // Example component
 const CommonDrawer = ({ drawerId }) => {
   const dispatch = useDispatch();
   const drawer = useSelector((state) => state.drawer[drawerId]);
+  const drawerSize = useSelector((state) => state.drawer[drawerId]?.size);
 
   if (!drawer) return null; // If no drawer exists, don't render
 
@@ -31,7 +32,7 @@ const CommonDrawer = ({ drawerId }) => {
       onClose={handleClose}
       title=""
       padding="xl"
-      size="lg"
+      size={drawerSize || 'lg'} // Default to 'lg' if size is not set
       position="right"
       withCloseButton={false}
     >

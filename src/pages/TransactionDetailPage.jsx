@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Group, Loader, Stack, Text } from '@mantine/core';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import ExpenseTransactionDetailCard from '../components/ExpenseTransactionDetailCard';
 import SectionHeading from '../components/SectionHeading';
 import { useDispatch } from 'react-redux';
 import { openDrawer } from '../store/drawerSlice';
@@ -11,6 +10,7 @@ import {
 } from '../services/transactionApi';
 import PropTypes from 'prop-types';
 import { groupTransactionsByMonth } from '../utils/helper';
+import TransactionItem from '../components/TransactionItem';
 
 const TransactionDetailPage = ({ isShowExpense }) => {
   const dispatch = useDispatch();
@@ -18,9 +18,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
   const [allTransactions, setAllTransactions] = useState([]);
   const title = isShowExpense ? 'Expenses' : 'Income';
 
-  const [dynamicDescription, setDynamicDescription] = useState(
-    `${title} Transactions`
-  );
+  const [, setDynamicDescription] = useState(`${title} Transactions`);
 
   const monthRefs = useRef({});
   const limit = 10;
@@ -122,10 +120,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
         style={{ zIndex: 8 }}
       >
         {/* <SectionHeading title={title} description={dynamicDescription} /> */}
-        <SectionHeading
-          title={title}
-          description={'Expenses Transactions by Month'}
-        />
+        <SectionHeading title={title} description={'Transactions by Month'} />
         <Button variant="light" size="xs" onClick={handleOpenDrawer}>
           {`Add ${title}`}
         </Button>
@@ -167,7 +162,7 @@ const TransactionDetailPage = ({ isShowExpense }) => {
                       transaction._id
                     }`}
                   >
-                    <ExpenseTransactionDetailCard data={transaction} />
+                    <TransactionItem transaction={transaction} />
                   </Box>
                 ))}
               </Box>

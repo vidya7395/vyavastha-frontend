@@ -1,26 +1,36 @@
 import { Button, Flex, Stack, Text } from '@mantine/core';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 
 import SectionHeading from './SectionHeading';
 import TransactionItem from './TransactionItem';
-
 const ExpenseSection = ({ recentExpenseData }) => {
-  const expenseTrans = recentExpenseData?.recentExpenses?.map((transaction) => {
-    const transactionDate = new Date(transaction.date);
-    return {
-      key: transaction._id,
-      date: transactionDate.getDate(), // Extract day (e.g., 12)
-      month: transactionDate.toLocaleString('en-US', { month: 'short' }), // Extract the day from date
-      description: transaction.description,
-      transaction: transaction.category.name, // Use category name as transaction name
-      category: transaction.category.name, // Same as above
-      type: transaction.type, // 'income' in this case
-      amount: transaction.amount,
-      spendingType: transaction.spendingType, // Default spendingType (change if required),
-      isRecurring: transaction.recurring
-    };
-  });
-  const openAddIncomeModal = () => {};
+  const navigate = useNavigate();
+  const expenseTrans =
+    recentExpenseData?.recentExpenses?.map((transaction) => {
+      const transactionDate = transaction.date
+        ? new Date(transaction.date)
+        : new Date();
+
+      return {
+        ...transaction, // Spread any other existing fields
+        key: transaction._id || transaction.id || Math.random(), // fallback to random key if no id
+        date: transactionDate.toISOString(),
+        categoryId: {
+          _id: transaction.category?._id || transaction.category?.id || '',
+          name: transaction.category?.name || 'N/A'
+        },
+        isRecurring: transaction.recurring ?? false,
+        recurringDetails: transaction.recurringDetails ?? null
+      };
+    }) ?? [];
+
+  console.log('expenseTrans', expenseTrans);
+
+  const openAddIncomeModal = () => {
+    // TODO: Implement opening of add expense modal
+  };
+
   return (
     <>
       <Flex
@@ -33,17 +43,20 @@ const ExpenseSection = ({ recentExpenseData }) => {
         mt={30}
       >
         <SectionHeading
-          title={'Recent Expenses'}
-          description={`You have total ${recentExpenseData?.recentExpenses?.length} expense(s) for this month`}
-        ></SectionHeading>
+          title="Recent Expenses"
+          description={`You have total ${
+            recentExpenseData?.recentExpenses?.length || 0
+          } expense(s) for this month`}
+        />
 
         <Button
           variant="white"
           color="dark"
           size="compact-sm"
           onClick={(event) => {
-            event.stopPropagation(); // ✅ Stop event from reaching Accordion.Control
-            openAddIncomeModal();
+            event.stopPropagation();
+
+            navigate('/finance');
           }}
         >
           <Text size="sm" fw={500}>
@@ -51,25 +64,35 @@ const ExpenseSection = ({ recentExpenseData }) => {
           </Text>
         </Button>
       </Flex>
+
       <Stack>
         {expenseTrans.map((expense) => (
-          <TransactionItem
-            key={expense.key}
-            amount={expense.amount}
-            date={`${expense.date} ${expense.month}`}
-            title={expense.description}
-            category={expense.category}
-            spendingType={expense.spendingType}
-            type={expense.type}
-            isRecurring={expense.isRecurring}
-          />
+          <TransactionItem key={expense.key} transaction={expense} />
         ))}
       </Stack>
     </>
   );
 };
+
 ExpenseSection.propTypes = {
-  recentExpenseData: PropTypes.array.isRequired,
-  isRecurring: PropTypes.bool.isRequired
+  recentExpenseData: PropTypes.shape({
+    recentExpenses: PropTypes.arrayOf(
+      PropTypes.shape({
+        _id: PropTypes.string,
+        description: PropTypes.string,
+        date: PropTypes.string,
+        amount: PropTypes.number,
+        type: PropTypes.string,
+        category: PropTypes.shape({
+          _id: PropTypes.string,
+          name: PropTypes.string
+        }),
+        spendingType: PropTypes.string,
+        recurring: PropTypes.bool,
+        recurringDetails: PropTypes.object
+      })
+    )
+  }).isRequired
 };
+
 export default ExpenseSection;

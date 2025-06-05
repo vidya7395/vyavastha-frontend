@@ -17,7 +17,7 @@ createRoot(document.getElementById('root')).render(
       withNormalizeCSS
       defaultColorScheme="dark"
     >
-      <Notifications />
+      <Notifications position="top-right" />
       <ErrorBoundary>
         <App />
       </ErrorBoundary>

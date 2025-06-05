@@ -22,7 +22,11 @@ import RecurringOptions from './RecurringOptions';
 import NotesInput from './NotesInput';
 import FormFooter from './FormFooter';
 import useRecurringLogic from '../../hooks/useRecurringLogic';
-
+const getCategoryDisplayValue = (categoryId) => {
+  if (!categoryId) return '';
+  if (typeof categoryId === 'object' && categoryId.name) return categoryId.name;
+  return String(categoryId); // ensure it’s always a string
+};
 const TransactionForm = ({
   type,
   onSubmitTransaction,
@@ -47,7 +51,7 @@ const TransactionForm = ({
     resolver: yupResolver(transactionSchema),
     defaultValues: {
       amount: defaultValues.amount ?? '',
-      categoryId: defaultValues.categoryId ?? '',
+      categoryId: getCategoryDisplayValue(defaultValues.categoryId),
       description: defaultValues.description ?? '',
       date: defaultValues.date ?? new Date(),
       spendingType: defaultValues.spendingType ?? 'needs',
@@ -58,7 +62,10 @@ const TransactionForm = ({
     }
   });
 
+  console.log('Default Values:', defaultValues);
+
   const [categoryValue, setCategoryValue] = useState('');
+  const [spendingTypeValue, setSpendingTypeValue] = useState('');
   const [amountDisplay, setAmountDisplay] = useState('');
   const [readableAmount, setReadableAmount] = useState('');
   const [amountEmoji, setAmountEmoji] = useState('');
@@ -71,23 +78,33 @@ const TransactionForm = ({
 
   useEffect(() => {
     if (defaultValues) {
-      console.log('rawAmount', defaultValues);
       const rawAmount = String(defaultValues.amount ?? '');
 
       const formatted = formatIndianCurrency(rawAmount);
-      // const { text, emoji, label } =
-      getReadableAmountWithEmojiAndLabel(formatted);
+      const { text, emoji, label } =
+        getReadableAmountWithEmojiAndLabel(formatted);
 
-      // setAmountDisplay(formatted);
-      console.log('formatted', formatted);
+      setAmountDisplay(formatted);
 
-      // setReadableAmount(text);
-      // setAmountEmoji(emoji);
-      // setAmountLabel(label);
+      setReadableAmount(text);
+      setAmountEmoji(emoji);
+      setAmountLabel(label);
+
       setIsRecurring(defaultValues.recurring ?? false);
+
+      // ✅ Fix for spendingType default!
+      if (defaultValues.spendingType) {
+        setSpendingTypeValue(defaultValues.spendingType);
+        setValue('spendingType', defaultValues.spendingType);
+      }
+
+      // ✅ Also ensure category value and form field are set
       if (defaultValues.categoryId) {
-        setCategoryValue(defaultValues.categoryId ?? '');
-        setValue('category', defaultValues.categoryId);
+        const categoryDisplay = getCategoryDisplayValue(
+          defaultValues.categoryId
+        );
+        setCategoryValue(categoryDisplay);
+        setValue('category', categoryDisplay);
       }
     }
   }, [defaultValues, setValue]);
@@ -97,7 +114,8 @@ const TransactionForm = ({
     watch,
     setValue,
     isAddingExpense: isExpense,
-    categoryValue
+    categoryValue,
+    spendingTypeValue
   });
 
   const handleAmountChange = (e) => {
@@ -197,6 +215,7 @@ const TransactionForm = ({
         setReadableAmount('');
         setAmountEmoji('');
         setAmountLabel('');
+        setSpendingTypeValue('needs');
         setIsRecurring(false);
         setTotal((prev) => prev + (parseFloat(data.amount) || 0));
       } catch (error) {
@@ -263,6 +282,7 @@ const TransactionForm = ({
 
         {isExpense && (
           <SpendingTypeSelector
+            value={spendingTypeValue}
             control={control}
             error={errors.spendingType?.message}
           />

@@ -36,7 +36,6 @@ const Dashboard = () => {
       <Grid gutter="xl" mt="xl">
         <Grid.Col span={8}>
           <Flex direction="column">
-            {recentIncome && <IncomeSection recentIncomeData={recentIncome} />}
             {recentExpense && (
               <ExpenseSection recentExpenseData={recentExpense} />
             )}

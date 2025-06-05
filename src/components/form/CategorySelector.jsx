@@ -11,8 +11,10 @@ const CategorySelector = ({
   error,
   clearErrors
 }) => {
-  const filteredOptions = options.filter((item) =>
-    item.name.toLowerCase().includes(value.toLowerCase().trim())
+  const filteredOptions = options.filter(
+    (item) =>
+      typeof item.name === 'string' &&
+      item.name.toLowerCase().includes(String(value).toLowerCase().trim())
   );
 
   const optionItems = filteredOptions.map((item) => (
