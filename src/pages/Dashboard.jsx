@@ -28,6 +28,7 @@ const Dashboard = () => {
   if (isIncomeError || isExpenseError) {
     return <Text color="red">Failed to load dashboard data.</Text>;
   }
+  console.log('Recent Expense', recentExpense);
 
   return (
     <>

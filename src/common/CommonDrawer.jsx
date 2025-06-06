@@ -2,7 +2,7 @@ import { Drawer } from '@mantine/core';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { closeDrawer } from '../store/drawerSlice';
-import AddTransaction from '../components/AddTransaction'; // Example component
+import AddTransactionParent from '../components/AddTransactionParent';
 
 const CommonDrawer = ({ drawerId }) => {
   const dispatch = useDispatch();
@@ -19,7 +19,7 @@ const CommonDrawer = ({ drawerId }) => {
   const renderContent = () => {
     switch (drawer.contentType) {
       case 'AddTransaction':
-        return <AddTransaction drawerId={drawerId} />;
+        return <AddTransactionParent drawerId={drawerId} />;
 
       default:
         return <div>Loading...</div>; // Fallback if no matching content type

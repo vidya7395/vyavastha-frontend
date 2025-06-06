@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { useCombobox, Flex, Text } from '@mantine/core';
 import { useForm } from 'react-hook-form';
@@ -11,7 +11,6 @@ import {
   formatIndianCurrency,
   getReadableAmountWithEmojiAndLabel
 } from '../../utils/helper';
-import { useCallback } from 'react';
 
 import AmountInput from './AmountInput';
 import DateInputGroup from './DateInputGroup';
@@ -22,11 +21,13 @@ import RecurringOptions from './RecurringOptions';
 import NotesInput from './NotesInput';
 import FormFooter from './FormFooter';
 import useRecurringLogic from '../../hooks/useRecurringLogic';
+
 const getCategoryDisplayValue = (categoryId) => {
   if (!categoryId) return '';
   if (typeof categoryId === 'object' && categoryId.name) return categoryId.name;
-  return String(categoryId); // ensure it’s always a string
+  return String(categoryId);
 };
+
 const TransactionForm = ({
   type,
   onSubmitTransaction,
@@ -35,9 +36,12 @@ const TransactionForm = ({
   isCreatingCategory,
   defaultValues = {},
   onSubmitOverride,
-  setSubmitRef // ✅ NEW
+  setSubmitRef,
+  isEdit
 }) => {
   const isExpense = type === 'expense';
+
+  // ✅ Main form
   const {
     register,
     control,
@@ -51,7 +55,7 @@ const TransactionForm = ({
     resolver: yupResolver(transactionSchema),
     defaultValues: {
       amount: defaultValues.amount ?? '',
-      categoryId: getCategoryDisplayValue(defaultValues.categoryId),
+      category: getCategoryDisplayValue(defaultValues.categoryId),
       description: defaultValues.description ?? '',
       date: defaultValues.date ?? new Date(),
       spendingType: defaultValues.spendingType ?? 'needs',
@@ -62,53 +66,33 @@ const TransactionForm = ({
     }
   });
 
-  console.log('Default Values:', defaultValues);
-
-  const [categoryValue, setCategoryValue] = useState('');
-  const [spendingTypeValue, setSpendingTypeValue] = useState('');
-  const [amountDisplay, setAmountDisplay] = useState('');
-  const [readableAmount, setReadableAmount] = useState('');
-  const [amountEmoji, setAmountEmoji] = useState('');
-  const [amountLabel, setAmountLabel] = useState('');
-  const [isRecurring, setIsRecurring] = useState(false);
+  const [categoryValue, setCategoryValue] = useState(
+    getCategoryDisplayValue(defaultValues.categoryId)
+  );
+  const [amountDisplay, setAmountDisplay] = useState(
+    defaultValues.amount
+      ? formatIndianCurrency(String(defaultValues.amount))
+      : ''
+  );
+  const [isRecurring, setIsRecurring] = useState(
+    defaultValues.recurring ?? false
+  );
   const [total, setTotal] = useState(0);
 
   const combobox = useCombobox();
   const categoriesList = categories ?? [];
 
-  useEffect(() => {
-    if (defaultValues) {
-      const rawAmount = String(defaultValues.amount ?? '');
+  // Fancy amount display
+  const {
+    text: readableAmount,
+    emoji: amountEmoji,
+    label: amountLabel
+  } = getReadableAmountWithEmojiAndLabel(amountDisplay);
 
-      const formatted = formatIndianCurrency(rawAmount);
-      const { text, emoji, label } =
-        getReadableAmountWithEmojiAndLabel(formatted);
+  // Spending type watch
+  const spendingTypeValue = watch('spendingType');
 
-      setAmountDisplay(formatted);
-
-      setReadableAmount(text);
-      setAmountEmoji(emoji);
-      setAmountLabel(label);
-
-      setIsRecurring(defaultValues.recurring ?? false);
-
-      // ✅ Fix for spendingType default!
-      if (defaultValues.spendingType) {
-        setSpendingTypeValue(defaultValues.spendingType);
-        setValue('spendingType', defaultValues.spendingType);
-      }
-
-      // ✅ Also ensure category value and form field are set
-      if (defaultValues.categoryId) {
-        const categoryDisplay = getCategoryDisplayValue(
-          defaultValues.categoryId
-        );
-        setCategoryValue(categoryDisplay);
-        setValue('category', categoryDisplay);
-      }
-    }
-  }, [defaultValues, setValue]);
-
+  // Recurring logic
   useRecurringLogic({
     isRecurring,
     watch,
@@ -118,38 +102,23 @@ const TransactionForm = ({
     spendingTypeValue
   });
 
+  // Amount change
   const handleAmountChange = (e) => {
-    let raw = e.target.value ?? '';
-
-    // Remove commas from the input for numeric parsing
+    const raw = e.target.value ?? '';
     const numeric = raw.replace(/,/g, '');
-
-    // Only digits allowed
     if (!/^\d*$/.test(numeric)) return;
 
-    // Format the number for display
     const formatted = formatIndianCurrency(numeric);
-
-    // ✅ Input field shows formatted string
     setAmountDisplay(formatted);
-
-    // ✅ Form state uses unformatted numeric string
     setValue('amount', numeric);
     clearErrors('amount');
-
-    // ✅ Update formatted fancy display
-    const { text, emoji, label } =
-      getReadableAmountWithEmojiAndLabel(formatted);
-    setReadableAmount(text);
-    setAmountEmoji(emoji);
-    setAmountLabel(label);
   };
 
+  // Submit logic
   const handleSubmitForm = useCallback(
     async (data) => {
       try {
         const categoryInput = (categoryValue || data.category || '').trim();
-
         if (!categoryInput) {
           showNotification({
             title: 'Missing Category',
@@ -159,14 +128,13 @@ const TransactionForm = ({
           return;
         }
 
+        let finalCategoryId;
         const existingCategory = categories.find(
           (cat) => cat.name.toLowerCase() === categoryInput.toLowerCase()
         );
-
-        let finalCategoryId;
         if (!existingCategory) {
           const created = await onCreateCategory(categoryInput);
-          if (!created || !created.id) {
+          if (!created?.id) {
             showNotification({
               title: 'Error',
               message: 'Failed to create new category',
@@ -180,8 +148,9 @@ const TransactionForm = ({
         }
 
         const transaction = {
+          ...(isEdit && { id: defaultValues._id }), // 👈 adds id only if isEdit is true
           amount: data.amount,
-          categoryId: finalCategoryId,
+          category: finalCategoryId,
           description: data.description,
           date: format(data.date, 'yyyy-MM-dd'),
           type,
@@ -197,27 +166,18 @@ const TransactionForm = ({
           recurringFrequency: isRecurring ? data.recurringFrequency : null
         };
 
-        if (onSubmitOverride) {
+        if (isEdit) {
           await onSubmitOverride(transaction);
         } else {
           await onSubmitTransaction(transaction);
+          reset();
+          setCategoryValue('');
+          setAmountDisplay('');
+          setIsRecurring(false);
+          setTotal((prev) => prev + (parseFloat(data.amount) || 0));
         }
 
-        showNotification({
-          title: 'Success',
-          message: `${type === 'expense' ? 'Expense' : 'Income'} submitted!`,
-          color: 'teal'
-        });
-
-        reset();
-        setCategoryValue('');
-        setAmountDisplay('');
-        setReadableAmount('');
-        setAmountEmoji('');
-        setAmountLabel('');
-        setSpendingTypeValue('needs');
-        setIsRecurring(false);
-        setTotal((prev) => prev + (parseFloat(data.amount) || 0));
+        // Reset form
       } catch (error) {
         console.error('Submission error:', error);
         showNotification({
@@ -235,10 +195,12 @@ const TransactionForm = ({
       onSubmitTransaction,
       type,
       isRecurring,
+      isEdit,
       reset
     ]
   );
 
+  // Expose submitRef if provided
   useEffect(() => {
     if (setSubmitRef) {
       setSubmitRef(() => handleSubmit(handleSubmitForm));
@@ -270,7 +232,11 @@ const TransactionForm = ({
           </Text>
           <CategorySelector
             value={categoryValue}
-            onChange={setCategoryValue}
+            onChange={(val) => {
+              setCategoryValue(val);
+              setValue('category', val);
+              clearErrors('category');
+            }}
             options={categoriesList}
             combobox={combobox}
             isCreating={isCreatingCategory}
@@ -296,7 +262,15 @@ const TransactionForm = ({
 
         <FormFooter
           isExpense={isExpense}
-          onSubmitLabel={isExpense ? 'Add Expense' : 'Add Income'}
+          onSubmitLabel={
+            isEdit
+              ? isExpense
+                ? 'Update Expense'
+                : 'Update Income'
+              : isExpense
+              ? 'Add Expense'
+              : 'Add Income'
+          }
           totalAmount={total}
         />
       </Flex>
@@ -312,7 +286,8 @@ TransactionForm.propTypes = {
   isCreatingCategory: PropTypes.bool,
   defaultValues: PropTypes.object,
   onSubmitOverride: PropTypes.func,
-  setSubmitRef: PropTypes.func // ✅ NEW
+  setSubmitRef: PropTypes.func,
+  isEdit: PropTypes.bool
 };
 
 export default TransactionForm;

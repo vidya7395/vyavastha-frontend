@@ -28,11 +28,20 @@ import {
 } from '@tabler/icons-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
-import AddExpenseForm from './AddExpenseForm';
+import AddTransactionForm from './AddTransactionForm';
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { closeEditTransaction, openEditTransaction } from '../store/uiSlice';
 
 const TransactionItem = ({ transaction, onRemove, onSubmitEdit }) => {
   const theme = useMantineTheme();
-  const [isEditing, setIsEditing] = useState(false);
+  const dispatch = useDispatch();
+  const editingTransactionId = useSelector(
+    (state) => state.ui.editingTransactionId
+  );
+  const isEditing = editingTransactionId === transaction._id;
+  console.log('isEditing', isEditing);
+
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   function getBadgeColor(spendingType) {
@@ -64,7 +73,7 @@ const TransactionItem = ({ transaction, onRemove, onSubmitEdit }) => {
     if (onSubmitEdit) {
       await onSubmitEdit(updatedTransaction);
     }
-    setIsEditing(false);
+    dispatch(closeEditTransaction());
   };
 
   const handleDeleteConfirm = () => {
@@ -118,13 +127,13 @@ const TransactionItem = ({ transaction, onRemove, onSubmitEdit }) => {
               <ActionIcon
                 variant="outline"
                 color="gray"
-                onClick={() => setIsEditing(false)}
+                onClick={() => dispatch(closeEditTransaction())}
                 title="Cancel"
               >
                 <IconX size={16} />
               </ActionIcon>
             </Group>
-            <AddExpenseForm
+            <AddTransactionForm
               isExpense={transaction.type === 'expense'}
               defaultValues={{
                 ...transaction,
@@ -135,6 +144,7 @@ const TransactionItem = ({ transaction, onRemove, onSubmitEdit }) => {
                   transaction.categoryId || transaction.category.name || ''
               }}
               onSubmitOverride={handleEditSubmit}
+              isEdit={true}
             />
           </Box>
         ) : (
@@ -176,7 +186,9 @@ const TransactionItem = ({ transaction, onRemove, onSubmitEdit }) => {
                 <Menu.Dropdown>
                   <Menu.Item
                     icon={<IconEdit size={16} />}
-                    onClick={() => setIsEditing(true)}
+                    onClick={() =>
+                      dispatch(openEditTransaction(transaction._id))
+                    }
                   >
                     Edit
                   </Menu.Item>

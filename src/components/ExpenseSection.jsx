@@ -16,8 +16,7 @@ const ExpenseSection = ({ recentExpenseData }) => {
         ...transaction, // Spread any other existing fields
         key: transaction._id || transaction.id || Math.random(), // fallback to random key if no id
         date: transactionDate.toISOString(),
-        categoryId: {
-          _id: transaction.category?._id || transaction.category?.id || '',
+        category: {
           name: transaction.category?.name || 'N/A'
         },
         isRecurring: transaction.recurring ?? false,
@@ -26,10 +25,6 @@ const ExpenseSection = ({ recentExpenseData }) => {
     }) ?? [];
 
   console.log('expenseTrans', expenseTrans);
-
-  const openAddIncomeModal = () => {
-    // TODO: Implement opening of add expense modal
-  };
 
   return (
     <>
@@ -84,7 +79,6 @@ ExpenseSection.propTypes = {
         amount: PropTypes.number,
         type: PropTypes.string,
         category: PropTypes.shape({
-          _id: PropTypes.string,
           name: PropTypes.string
         }),
         spendingType: PropTypes.string,

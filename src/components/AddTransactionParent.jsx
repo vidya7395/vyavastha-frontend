@@ -6,15 +6,15 @@ import {
   Divider,
   Text
 } from '@mantine/core';
-import AddExpenseForm from './AddExpenseForm';
+import AddTransactionForm from './AddTransactionForm';
 import SmartInput from './SmartInput';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import TransactionReviewModal from './TransactionReviewModal';
 import { useDispatch } from 'react-redux';
-import { closeDrawer, drawerSize } from '../store/drawerSlice';
+import { drawerSize } from '../store/drawerSlice';
 
-const AddTransaction = ({ drawerId }) => {
+const AddTransactionParent = ({ drawerId }) => {
   const [selectedTab, setSelectedTab] = useState(
     drawerId === 'expenseDrawer' ? 'expenses' : 'income'
   );
@@ -28,7 +28,6 @@ const AddTransaction = ({ drawerId }) => {
   const handleParsed = (parsed) => {
     setParsedData(parsed);
     setModalOpen(true); // ✅ Show the modal
-    // dispatch(closeDrawer({ id: drawerId }));
   };
   const handleSwitchSmartInput = () => {
     setUseSmartInput(!useSmartInput);
@@ -72,7 +71,11 @@ const AddTransaction = ({ drawerId }) => {
               fullWidth
             />
             <Box mt="md">
-              <AddExpenseForm isExpense={selectedTab === 'expenses'} />
+              <AddTransactionForm
+                onSubmitOverride={undefined}
+                isEdit={false}
+                isExpense={selectedTab === 'expenses'}
+              />
             </Box>
           </>
         )}
@@ -87,8 +90,8 @@ const AddTransaction = ({ drawerId }) => {
   );
 };
 
-AddTransaction.propTypes = {
+AddTransactionParent.propTypes = {
   drawerId: PropTypes.string.isRequired
 };
 
-export default AddTransaction;
+export default AddTransactionParent;

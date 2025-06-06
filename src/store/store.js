@@ -9,6 +9,7 @@ import { categoryApi } from '../services/categoryApi';
 import { transactionApi } from '../services/transactionApi';
 import { reportsApi } from '../services/reportsApi';
 import { aiApi } from '../services/aiApi';
+import uiReducer from './uiSlice';
 
 export const store = configureStore({
   reducer: {
@@ -21,7 +22,8 @@ export const store = configureStore({
     // Add the RTK Query reducer
     // transaction: transactionReducer,
     modal: modalReducer,
-    drawer: drawerReducer
+    drawer: drawerReducer,
+    ui: uiReducer
     // category: categoryReducer
   },
   middleware: (getDefaultMiddleware) =>

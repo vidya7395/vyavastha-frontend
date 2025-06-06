@@ -6,22 +6,13 @@ import {
   Text,
   Divider,
   Group,
-  Box,
-  Badge,
-  ThemeIcon,
-  Stack
+  Box
 } from '@mantine/core';
 import PropTypes from 'prop-types';
 import { useEffect, useState } from 'react';
-import AddExpenseForm from './AddExpenseForm'; // make sure this is reusable for both income/expense
+import AddTransactionForm from './AddTransactionForm'; // make sure this is reusable for both income/expense
 import { format } from 'date-fns';
-import {
-  IconArrowDownRight,
-  IconArrowUpRight,
-  IconCalendarEvent,
-  IconCategory2,
-  IconCheck
-} from '@tabler/icons-react';
+
 import { useAddTransactionMutation } from '../services/transactionApi';
 import { showNotification } from '@mantine/notifications';
 import TransactionItem from './TransactionItem';
@@ -32,8 +23,6 @@ const TransactionReviewModal = ({
   parsedTransactions,
   setParsedTransactions
 }) => {
-  console.log('Parsed Transactions:', parsedTransactions);
-
   const [submitted, setSubmitted] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [addTransaction] = useAddTransactionMutation();
@@ -182,7 +171,7 @@ const TransactionReviewModal = ({
                             Cancel
                           </Button>
                         </Group>
-                        <AddExpenseForm
+                        <AddTransactionForm
                           isExpense={isExpense}
                           defaultValues={{
                             ...txn,
@@ -195,6 +184,7 @@ const TransactionReviewModal = ({
                             await handleSubmitSingle(data, idx);
                             setEditingIndex(null);
                           }}
+                          isEdit={false}
                         />
                       </Box>
                     </>

@@ -9,13 +9,6 @@ const FinanceDashboard = () => {
       <Title order={2} mb="md">
         Finance Overview
       </Title>
-
-      {/* Summary Cards */}
-      {/* <SynopsisCard /> */}
-
-      {/* <Divider my="xl" /> */}
-
-      {/* Transactions Section */}
       <Flex
         gap="lg"
         align="flex-start"
